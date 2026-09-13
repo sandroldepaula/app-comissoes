@@ -17,19 +17,136 @@ import {
   Layers, 
   X, 
   BarChart3, 
-  PieChart,
-  ClipboardList,
-  ArrowLeft,
-  Cloud,
-  Calendar,
-  Target,
-  ChevronRight,
-  AlertTriangle,
-  RefreshCw
+  PieChart, 
+  ClipboardList, 
+  ArrowLeft, 
+  Cloud, 
+  Calendar, 
+  Target, 
+  ChevronRight, 
+  AlertTriangle, 
+  RefreshCw 
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://hhmtsvicjtqydrjvacze.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhobXRzdmljanRxeWRyanZhY3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNzM4NjEsImV4cCI6MjEwNDc0OTg2MX0.eCRTXvxOsLkvdFUS3_5JmfE7XNLjKvKWdl61jUN9new';
+
+if (typeof document !== 'undefined' && !document.getElementById('supabase-cdn-sdk')) {
+  const script = document.createElement('script');
+  script.id = 'supabase-cdn-sdk';
+  script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+const defaultHeaders = {
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json'
+};
+
+const getErrorMessage = async (res) => {
+  try {
+    const json = await res.json();
+    return json?.message || json?.error || res.statusText || 'Erro na requisição';
+  } catch (e) {
+    return res.statusText || 'Erro na requisição';
+  }
+};
+
+const nativeRestClient = {
+  from: (table) => ({
+    select: async (cols = '*') => {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(cols)}`, {
+          method: 'GET',
+          headers: defaultHeaders
+        });
+        if (!res.ok) {
+          const msg = await getErrorMessage(res);
+          return { data: null, error: new Error(msg) };
+        }
+        const data = await res.json();
+        return { data, error: null };
+      } catch (err) {
+        return { data: null, error: err };
+      }
+    },
+    delete: () => ({
+      eq: async (column, value) => {
+        try {
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/${table}?${encodeURIComponent(column)}=eq.${encodeURIComponent(value)}`,
+            {
+              method: 'DELETE',
+              headers: defaultHeaders
+            }
+          );
+          if (!res.ok) {
+            const msg = await getErrorMessage(res);
+            return { error: new Error(msg) };
+          }
+          return { error: null };
+        } catch (err) {
+          return { error: err };
+        }
+      }
+    }),
+    insert: async (payload) => {
+      try {
+        const body = Array.isArray(payload) ? payload : [payload];
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+          method: 'POST',
+          headers: {
+            ...defaultHeaders,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const msg = await getErrorMessage(res);
+          return { error: new Error(msg) };
+        }
+        return { error: null };
+      } catch (err) {
+        return { error: err };
+      }
+    },
+    upsert: async (payload, options = {}) => {
+      try {
+        const body = Array.isArray(payload) ? payload : [payload];
+        const onConflictParam = options?.onConflict ? `?on_conflict=${encodeURIComponent(options.onConflict)}` : '';
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${onConflictParam}`, {
+          method: 'POST',
+          headers: {
+            ...defaultHeaders,
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+          },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const msg = await getErrorMessage(res);
+          return { error: new Error(msg) };
+        }
+        return { error: null };
+      } catch (err) {
+        return { error: err };
+      }
+    }
+  })
+};
+
+const supabase = {
+  from: (table) => {
+    if (typeof window !== 'undefined' && window.supabase?.createClient) {
+      if (!window.__supabaseOfficialClient) {
+        window.__supabaseOfficialClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+      return window.__supabaseOfficialClient.from(table);
+    }
+    return nativeRestClient.from(table);
+  }
+};
 
 const R_RATES = {
   R0: 0,
@@ -75,50 +192,10 @@ const useInjectGoogleFont = () => {
       const link = document.createElement('link');
       link.id = fontId;
       link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap';
+      link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap';
       document.head.appendChild(link);
     }
   }, []);
-};
-
-let supabaseClientInstance = null;
-const useSupabaseClient = () => {
-  const [client, setClient] = useState(null);
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    const initClient = () => {
-      try {
-        if (window.supabase && !supabaseClientInstance) {
-          supabaseClientInstance = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
-        setClient(supabaseClientInstance || (window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null));
-        setIsReady(true);
-      } catch (err) {
-        console.warn('Erro ao inicializar Supabase:', err);
-        setIsReady(true);
-      }
-    };
-
-    if (window.supabase) {
-      initClient();
-    } else {
-      const existingScript = document.getElementById('supabase-cdn-sdk');
-      if (!existingScript) {
-        const script = document.createElement('script');
-        script.id = 'supabase-cdn-sdk';
-        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-        script.async = true;
-        script.onload = initClient;
-        script.onerror = () => setIsReady(true);
-        document.head.appendChild(script);
-      } else {
-        existingScript.addEventListener('load', initClient);
-      }
-    }
-  }, []);
-
-  return { supabase: client, isReady };
 };
 
 const CurrencyInput = ({ value, onChange, className, placeholder, disabled }) => {
@@ -142,7 +219,7 @@ const CurrencyInput = ({ value, onChange, className, placeholder, disabled }) =>
       onChange={handleChange}
       disabled={disabled}
       placeholder={placeholder || "R$ 0,00"}
-      className={`bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-gray-300 print:text-black ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className || ''}`}
+      className={`bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2 py-1 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[8.5px] print:font-semibold print:text-slate-900 print:text-right print:shadow-none print:h-auto ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className || ''}`}
     />
   );
 };
@@ -237,6 +314,11 @@ const computeMonthMetrics = (salesList = [], extrasObj = DEFAULT_EXTRAS, netPct 
     accBase,
     autoboxBase,
     empBase,
+    fAndIBaseRetorno,
+    fAndICount,
+    spfCount,
+    empCount,
+    accCount,
     vnTier,
     marginTier,
     empTier,
@@ -266,17 +348,11 @@ const computeMonthMetrics = (salesList = [], extrasObj = DEFAULT_EXTRAS, netPct 
 
 export default function App() {
   useInjectGoogleFont();
-  const { supabase, isReady: supabaseReady } = useSupabaseClient();
 
-  // Navigation Screen: 'HUB' | 'DETAIL'
   const [currentScreen, setCurrentScreen] = useState('HUB');
   const [selectedMonthId, setSelectedMonthId] = useState(null);
+  const [syncStatus, setSyncStatus] = useState('connecting');
 
-  // Cloud & Sync States
-  const [syncStatus, setSyncStatus] = useState('connecting'); // 'connecting' | 'synced' | 'saving' | 'offline'
-  const [cloudError, setCloudError] = useState(null);
-
-  // Months State
   const [months, setMonths] = useState(() => {
     const local = localStorage.getItem('auto_months_hub_v1');
     if (local) {
@@ -288,7 +364,6 @@ export default function App() {
     return [];
   });
 
-  // Global Sales state mapped by mes_id
   const [salesByMonth, setSalesByMonth] = useState(() => {
     const local = localStorage.getItem('auto_sales_by_month_v1');
     if (local) {
@@ -300,7 +375,6 @@ export default function App() {
     return {};
   });
 
-  // UI Modals State
   const [isCreateMonthOpen, setIsCreateMonthOpen] = useState(false);
   const [monthToDelete, setMonthToDelete] = useState(null);
   const [showCalculationModal, setShowCalculationModal] = useState(false);
@@ -308,18 +382,14 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Form State for Creating Month
   const [newMonthForm, setNewMonthForm] = useState({
     mes: MONTH_NAMES[new Date().getMonth()] || 'Setembro',
     ano: new Date().getFullYear() || 2026,
     meta: 15
   });
 
-  // Active hover states for charts
   const [activeDonutSlice, setActiveDonutSlice] = useState(null);
   const [activeModelBar, setActiveModelBar] = useState(null);
-
-  // New Sale Form
   const [newSale, setNewSale] = useState(DEFAULT_SALE);
 
   const showNotification = useCallback((text, type = 'success') => {
@@ -335,6 +405,66 @@ export default function App() {
     return (val * 100).toFixed(2).replace('.', ',') + '%';
   }, []);
 
+  const syncMonthToSupabase = async (monthObj) => {
+    try {
+      setSyncStatus('saving');
+      const payload = {
+        id: String(monthObj.id),
+        nome_mes: String(monthObj.mes || ''),
+        ano: String(monthObj.ano || '2026'),
+        meta: Number(monthObj.meta) || 0,
+        aliquota_liquida: Number(monthObj.netPercentage !== undefined ? monthObj.netPercentage : 69.0),
+        lancamentos_extras: monthObj.extras || DEFAULT_EXTRAS
+      };
+
+      const { error } = await supabase.from('meses').upsert(payload, { onConflict: 'id' });
+      if (error) throw error;
+      setSyncStatus('synced');
+    } catch (err) {
+      console.warn('Falha no upload do mês:', err);
+      setSyncStatus('offline');
+      showNotification(`Erro ao sincronizar mês com o Supabase: ${err.message || 'Falha de comunicação'}`, 'error');
+      throw err;
+    }
+  };
+
+  const syncSalesToSupabase = async (mId, salesList) => {
+    try {
+      setSyncStatus('saving');
+      const payload = salesList.map(s => ({
+        id: String(s.id),
+        mes_id: String(mId),
+        cliente: String(s.client || ''),
+        carro: String(s.car || ''),
+        vn: Number(s.vn) || 0,
+        margem: Number(s.margin) || 0,
+        fi: Number(s.fAndI) || 0,
+        retorno_fi: String(s.returnFAndI || 'R0'),
+        spf: Number(s.spf) || 0,
+        acessorios: Number(s.accessories) || 0,
+        autobox: Number(s.autobox) || 0,
+        emplacamento: Number(s.emplacamento) || 0,
+        seguro: Number(s.seguro) || 0,
+        bonus_carro: Number(s.bonusCarro) || 0,
+        usados_captados: Number(s.usadosCaptados) || 0
+      }));
+
+      const { error: delError } = await supabase.from('vendas').delete().eq('mes_id', String(mId));
+      if (delError) throw delError;
+
+      if (payload.length > 0) {
+        const { error: insError } = await supabase.from('vendas').insert(payload);
+        if (insError) throw insError;
+      }
+      setSyncStatus('synced');
+    } catch (err) {
+      console.warn('Falha no upload de vendas:', err);
+      setSyncStatus('offline');
+      showNotification(`Erro ao sincronizar vendas com o Supabase: ${err.message || 'Falha de comunicação'}`, 'error');
+      throw err;
+    }
+  };
+
   useEffect(() => {
     localStorage.setItem('auto_months_hub_v1', JSON.stringify(months));
   }, [months]);
@@ -344,80 +474,100 @@ export default function App() {
   }, [salesByMonth]);
 
   useEffect(() => {
-    if (!supabaseReady) return;
-
     let isSubscribed = true;
 
     const fetchFromSupabase = async () => {
-      if (!supabase) {
-        setSyncStatus('offline');
-        return;
-      }
-
       setSyncStatus('connecting');
       try {
-        // Fetch months
         const { data: dbMonths, error: monthsErr } = await supabase
           .from('meses')
-          .select('*')
-          .order('ano', { ascending: false });
+          .select('*');
 
         if (monthsErr) throw monthsErr;
 
         if (isSubscribed && dbMonths && Array.isArray(dbMonths)) {
-          // Normalize from DB
+          const localMonthsRaw = localStorage.getItem('auto_months_hub_v1');
+          let localMonthsData = [];
+          try {
+            localMonthsData = localMonthsRaw ? JSON.parse(localMonthsRaw) : [];
+          } catch (e) {}
+
+          const localSalesRaw = localStorage.getItem('auto_sales_by_month_v1');
+          let localSalesData = {};
+          try {
+            localSalesData = localSalesRaw ? JSON.parse(localSalesRaw) : {};
+          } catch (e) {}
+
+          if (dbMonths.length === 0 && Array.isArray(localMonthsData) && localMonthsData.length > 0) {
+            setMonths(localMonthsData);
+            setSalesByMonth(localSalesData);
+            setSyncStatus('saving');
+
+            try {
+              for (const m of localMonthsData) {
+                await syncMonthToSupabase(m);
+                const sales = localSalesData[String(m.id)] || [];
+                if (sales.length > 0) {
+                  await syncSalesToSupabase(String(m.id), sales);
+                }
+              }
+              setSyncStatus('synced');
+              showNotification('Dados locais preservados e sincronizados com a nuvem!');
+            } catch (errSync) {
+              console.warn('Erro ao subir dados locais para nuvem:', errSync);
+              setSyncStatus('offline');
+              showNotification(`Dados locais mantidos. Falha na sincronização: ${errSync.message}`, 'error');
+            }
+            return;
+          }
+
           const normalizedMonths = dbMonths.map(m => ({
             id: String(m.id),
-            mes: m.mes || 'Mês',
-            ano: Number(m.ano) || 2026,
+            mes: String(m.nome_mes || 'Mês'),
+            ano: String(m.ano || 2026),
             meta: Number(m.meta) || 15,
-            netPercentage: m.net_percentage !== undefined ? Number(m.net_percentage) : (m.netPercentage ?? 69.0),
-            extras: m.extras || {
-              premioUsados: Number(m.premio_usados) || 0,
-              premioAguia: Number(m.premio_aguia) || 0,
-              premioLider: Number(m.premio_lider) || 0,
-              premioNps: Number(m.premio_nps) || 0,
-            }
+            netPercentage: m.aliquota_liquida !== undefined ? Number(m.aliquota_liquida) : 69.0,
+            extras: m.lancamentos_extras || DEFAULT_EXTRAS
           }));
 
           setMonths(normalizedMonths);
 
-          // Fetch all sales for these months
           const { data: dbVendas, error: vendasErr } = await supabase
             .from('vendas')
             .select('*');
 
-          if (!vendasErr && dbVendas && Array.isArray(dbVendas)) {
+          if (vendasErr) throw vendasErr;
+
+          if (isSubscribed && dbVendas && Array.isArray(dbVendas)) {
             const mapped = {};
             dbVendas.forEach(v => {
-              const mId = String(v.mes_id || v.mesId);
+              const mId = String(v.mes_id);
               if (!mapped[mId]) mapped[mId] = [];
               mapped[mId].push({
-                id: v.id || Date.now() + Math.random(),
-                client: v.client || v.cliente || '',
-                car: v.car || v.carro || '',
+                id: String(v.id),
+                client: String(v.cliente || ''),
+                car: String(v.carro || ''),
                 vn: Number(v.vn) || 0,
-                margin: Number(v.margin || v.margem) || 0,
-                fAndI: Number(v.f_and_i || v.fAndI || v.fi) || 0,
-                returnFAndI: v.return_f_and_i || v.returnFAndI || 'R0',
+                margin: Number(v.margem) || 0,
+                fAndI: Number(v.fi) || 0,
+                returnFAndI: String(v.retorno_fi || 'R0'),
                 spf: Number(v.spf) || 0,
-                accessories: Number(v.accessories || v.acessorios) || 0,
+                accessories: Number(v.acessorios) || 0,
                 autobox: Number(v.autobox) || 0,
                 emplacamento: Number(v.emplacamento) || 0,
                 seguro: Number(v.seguro) || 0,
-                bonusCarro: Number(v.bonus_carro || v.bonusCarro) || 0,
-                usadosCaptados: Number(v.usados_captados || v.usadosCaptados) || 0
+                bonusCarro: Number(v.bonus_carro) || 0,
+                usadosCaptados: Number(v.usados_captados) || 0
               });
             });
             setSalesByMonth(mapped);
           }
           setSyncStatus('synced');
-          setCloudError(null);
         }
       } catch (err) {
         console.warn('Conexão Supabase em modo contingência:', err);
         setSyncStatus('offline');
-        setCloudError(err.message || 'Falha temporária de conexão com o banco.');
+        showNotification(`Falha ao conectar com o Supabase: ${err.message}`, 'error');
       }
     };
 
@@ -426,7 +576,7 @@ export default function App() {
     return () => {
       isSubscribed = false;
     };
-  }, [supabaseReady, supabase]);
+  }, [showNotification]);
 
   const activeMonth = useMemo(() => {
     if (!selectedMonthId) return null;
@@ -551,86 +701,43 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const syncMonthToSupabase = async (monthObj) => {
-    if (!supabase) return;
-    try {
-      setSyncStatus('saving');
-      const payload = {
-        id: monthObj.id,
-        mes: monthObj.mes,
-        ano: monthObj.ano,
-        meta: monthObj.meta,
-        net_percentage: monthObj.netPercentage,
-        extras: monthObj.extras
-      };
-      await supabase.from('meses').upsert(payload);
-      setSyncStatus('synced');
-    } catch (err) {
-      console.warn('Falha no upload do mês:', err);
-      setSyncStatus('offline');
-    }
-  };
-
-  const syncSalesToSupabase = async (mId, salesList) => {
-    if (!supabase) return;
-    try {
-      setSyncStatus('saving');
-      // Delete existing for this month and reinsert, or upsert
-      await supabase.from('vendas').delete().eq('mes_id', mId);
-      if (salesList.length > 0) {
-        const payload = salesList.map(s => ({
-          id: s.id,
-          mes_id: mId,
-          client: s.client,
-          car: s.car,
-          vn: s.vn,
-          margin: s.margin,
-          f_and_i: s.fAndI,
-          return_f_and_i: s.returnFAndI,
-          spf: s.spf,
-          accessories: s.accessories,
-          autobox: s.autobox,
-          emplacamento: s.emplacamento,
-          seguro: s.seguro,
-          bonus_carro: s.bonusCarro,
-          usados_captados: s.usadosCaptados
-        }));
-        await supabase.from('vendas').insert(payload);
-      }
-      setSyncStatus('synced');
-    } catch (err) {
-      console.warn('Falha no upload de vendas:', err);
-      setSyncStatus('offline');
-    }
-  };
-
   const handleCreateMonth = async (e) => {
     e.preventDefault();
     const newId = 'm_' + Date.now();
     const createdMonth = {
       id: newId,
       mes: newMonthForm.mes,
-      ano: Number(newMonthForm.ano) || 2026,
+      ano: String(newMonthForm.ano || 2026),
       meta: Number(newMonthForm.meta) || 15,
       netPercentage: 69.0,
       extras: DEFAULT_EXTRAS
     };
 
-    setMonths(prev => [createdMonth, ...prev]);
-    setSalesByMonth(prev => ({ ...prev, [newId]: [] }));
-    setIsCreateMonthOpen(false);
-    setSelectedMonthId(newId);
-    setCurrentScreen('DETAIL');
-    showNotification(`Mês de ${createdMonth.mes}/${createdMonth.ano} criado com sucesso!`);
-
-    syncMonthToSupabase(createdMonth);
+    setSyncStatus('saving');
+    try {
+      await syncMonthToSupabase(createdMonth);
+      setMonths(prev => [createdMonth, ...prev]);
+      setSalesByMonth(prev => ({ ...prev, [newId]: [] }));
+      setIsCreateMonthOpen(false);
+      setSelectedMonthId(newId);
+      setCurrentScreen('DETAIL');
+      showNotification(`Mês de ${createdMonth.mes}/${createdMonth.ano} criado com sucesso!`);
+    } catch (err) {
+      console.error('Falha ao criar mês no Supabase:', err);
+      setMonths(prev => [createdMonth, ...prev]);
+      setSalesByMonth(prev => ({ ...prev, [newId]: [] }));
+      setIsCreateMonthOpen(false);
+      setSelectedMonthId(newId);
+      setCurrentScreen('DETAIL');
+      showNotification(`Mês criado localmente. Erro no Supabase: ${err.message}`, 'error');
+    }
   };
 
   const handleConfirmDeleteMonth = async () => {
     if (!monthToDelete) return;
-    const mId = monthToDelete.id;
+    const mId = String(monthToDelete.id);
 
-    setMonths(prev => prev.filter(m => m.id !== mId));
+    setMonths(prev => prev.filter(m => String(m.id) !== mId));
     setSalesByMonth(prev => {
       const next = { ...prev };
       delete next[mId];
@@ -643,15 +750,18 @@ export default function App() {
     }
 
     setMonthToDelete(null);
-    showNotification("Mês e registros excluídos com sucesso!");
+    showNotification("Mês e registros excluídos localmente!");
 
-    if (supabase) {
-      try {
-        await supabase.from('vendas').delete().eq('mes_id', mId);
-        await supabase.from('meses').delete().eq('id', mId);
-      } catch (e) {
-        console.warn('Erro ao remover do Supabase:', e);
-      }
+    try {
+      const { error: delVendasErr } = await supabase.from('vendas').delete().eq('mes_id', mId);
+      if (delVendasErr) throw delVendasErr;
+      const { error: delMesErr } = await supabase.from('meses').delete().eq('id', mId);
+      if (delMesErr) throw delMesErr;
+      showNotification("Mês excluído da nuvem com sucesso!");
+    } catch (e) {
+      console.warn('Erro ao remover do Supabase:', e);
+      showNotification(`Erro ao excluir mês no Supabase: ${e.message}`, 'error');
+      setSyncStatus('offline');
     }
   };
 
@@ -659,46 +769,52 @@ export default function App() {
     if (!selectedMonthId) return;
     const updatedExtras = { ...activeExtras, [field]: val };
 
-    setMonths(prev => prev.map(m => {
-      if (m.id === selectedMonthId) {
-        const nextM = { ...m, extras: updatedExtras };
-        syncMonthToSupabase(nextM);
-        return nextM;
+    const nextMonths = months.map(m => {
+      if (String(m.id) === String(selectedMonthId)) {
+        return { ...m, extras: updatedExtras };
       }
       return m;
-    }));
+    });
+
+    setMonths(nextMonths);
+    const targetMonth = nextMonths.find(m => String(m.id) === String(selectedMonthId));
+    if (targetMonth) {
+      syncMonthToSupabase(targetMonth);
+    }
   };
 
   const handleUpdateActiveNetPercentage = (val) => {
     if (!selectedMonthId) return;
-    setMonths(prev => prev.map(m => {
-      if (m.id === selectedMonthId) {
-        const nextM = { ...m, netPercentage: val };
-        syncMonthToSupabase(nextM);
-        return nextM;
+    const nextMonths = months.map(m => {
+      if (String(m.id) === String(selectedMonthId)) {
+        return { ...m, netPercentage: val };
       }
       return m;
-    }));
+    });
+
+    setMonths(nextMonths);
+    const targetMonth = nextMonths.find(m => String(m.id) === String(selectedMonthId));
+    if (targetMonth) {
+      syncMonthToSupabase(targetMonth);
+    }
   };
 
   const handleSaleChange = (saleId, field, value) => {
     if (!selectedMonthId) return;
-    setSalesByMonth(prev => {
-      const list = prev[selectedMonthId] || [];
-      const nextList = list.map(s => s.id === saleId ? { ...s, [field]: value } : s);
-      syncSalesToSupabase(selectedMonthId, nextList);
-      return { ...prev, [selectedMonthId]: nextList };
-    });
+    const currentSales = salesByMonth[selectedMonthId] || [];
+    const nextList = currentSales.map(s => s.id === saleId ? { ...s, [field]: value } : s);
+
+    setSalesByMonth(prev => ({ ...prev, [selectedMonthId]: nextList }));
+    syncSalesToSupabase(selectedMonthId, nextList);
   };
 
   const handleRemoveSale = (saleId) => {
     if (!selectedMonthId) return;
-    setSalesByMonth(prev => {
-      const list = prev[selectedMonthId] || [];
-      const nextList = list.filter(s => s.id !== saleId);
-      syncSalesToSupabase(selectedMonthId, nextList);
-      return { ...prev, [selectedMonthId]: nextList };
-    });
+    const currentSales = salesByMonth[selectedMonthId] || [];
+    const nextList = currentSales.filter(s => s.id !== saleId);
+
+    setSalesByMonth(prev => ({ ...prev, [selectedMonthId]: nextList }));
+    syncSalesToSupabase(selectedMonthId, nextList);
     showNotification("Venda removida.");
   };
 
@@ -710,7 +826,7 @@ export default function App() {
 
     const saleToAdd = {
       ...newSale,
-      id: Date.now(),
+      id: 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
       client: clientName,
       car: carName
     };
@@ -750,7 +866,6 @@ export default function App() {
         if (json.salesByMonth && typeof json.salesByMonth === 'object') {
           setSalesByMonth(json.salesByMonth);
         } else if (Array.isArray(json.sales) && json.months?.[0]?.id) {
-          // Retrocompatibility with older single-month backups
           setSalesByMonth({ [json.months[0].id]: json.sales });
         }
         showNotification("Dados restaurados com êxito!");
@@ -798,8 +913,6 @@ export default function App() {
   const renderHubScreen = () => {
     return (
       <div className="space-y-8 animate-in fade-in duration-200">
-        
-        {/* Hub Banner & Title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-3xl p-6 md:p-8 shadow-sm">
           <div>
             <div className="flex items-center gap-2">
@@ -828,7 +941,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Month Cards Grid */}
         {months.length === 0 ? (
           <div className="bg-white border border-slate-200/80 rounded-3xl p-12 text-center shadow-sm">
             <div className="max-w-md mx-auto flex flex-col items-center">
@@ -893,7 +1005,6 @@ export default function App() {
                       </button>
                     </div>
 
-                    {/* Meta Progress Bar */}
                     <div className="space-y-1.5 pt-1">
                       <div className="flex items-center justify-between text-xs font-medium">
                         <span className="text-slate-500">Progresso da Meta</span>
@@ -907,7 +1018,6 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Metrics Summary Mini Grid */}
                     <div className="grid grid-cols-2 gap-3 pt-2">
                       <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
@@ -928,7 +1038,6 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Net Highlight Pill */}
                     <div className="bg-gradient-to-br from-slate-900 to-sky-950 text-white rounded-2xl p-4 flex items-center justify-between shadow-xs">
                       <div>
                         <span className="text-[10px] font-semibold text-sky-300 uppercase tracking-wider block">
@@ -970,9 +1079,9 @@ export default function App() {
     if (!activeMonth) return null;
 
     return (
-      <div className="space-y-8 animate-in fade-in duration-200">
+      <div className="space-y-8 print:space-y-0 animate-in fade-in duration-200">
         
-        {/* Navigation Bar for Selected Month */}
+        {/* Navigation Bar for Selected Month (Screen only) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 px-6 shadow-sm print:hidden">
           <div className="flex items-center gap-3">
             <button
@@ -1001,35 +1110,155 @@ export default function App() {
           </div>
         </div>
 
-        {/* Print Header */}
-        <div className="hidden print:block p-6 border-b border-slate-200 mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Relatório Executivo de Vendas & Comissões</h1>
-              <p className="text-xs text-slate-500 mt-1">Competência: {activeMonth.mes} / {activeMonth.ano} — Gerado em: {new Date().toLocaleDateString('pt-BR')}</p>
+        {/* =========================================================================
+            PÁGINA 1 DA IMPRESSÃO (OPERACIONAL & FECHAMENTO COMERCIAL)
+           ========================================================================= */}
+
+        {/* 1.1 Print Executive Header (Page 1 Top) */}
+        <div className="hidden print:flex items-center justify-between border-b border-slate-300 pb-2 mb-3 text-slate-900">
+          <div className="flex items-baseline gap-2.5">
+            <h1 className="text-base font-black tracking-tight text-slate-900 leading-none">
+              Relatório Executivo de Vendas & Comissões
+            </h1>
+            <span className="text-[10.5px] text-slate-600 font-semibold">
+              Competência: <strong>{activeMonth.mes} / {activeMonth.ano}</strong>
+            </span>
+            <span className="text-[9.5px] text-slate-400">
+              • Emissão: {new Date().toLocaleDateString('pt-BR')} • Página 1 de 2
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-[10px]">
+            <span className="text-slate-600 font-medium">Meta: <strong>{activeMonth.meta}</strong> veículos</span>
+            <span className="text-slate-300">|</span>
+            <span className="text-slate-600">Alíquota Líquida:</span>
+            <span className="text-slate-900 font-black bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+              {activeNetPercentage.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+
+        {/* 1.2 Os 4 Cards Executivos Oficiais no Print (Restaurados com Design Premium Original) */}
+        <div className="hidden print:grid print:grid-cols-4 print:gap-4 print:mb-3 print-avoid-break">
+          
+          {/* Card 1: Volume Total & Faixa VN */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                Volume Total & Faixa VN
+              </span>
+              <span className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                <Layers size={14} />
+              </span>
             </div>
-            <div className="text-right">
-              <span className="text-xs text-slate-500">Alíquota Líquida Aplicada</span>
-              <p className="text-base font-bold text-slate-800">{activeNetPercentage.toFixed(2)}%</p>
+            <div className="my-1">
+              <span className="text-2xl font-black text-slate-900 tracking-tight">
+                {metrics.volume} {metrics.volume === 1 ? 'veículo' : 'veículos'}
+              </span>
+            </div>
+            <div className="border-t border-slate-100 pt-2 text-[10px] text-slate-500 flex items-center justify-between">
+              <span>Taxa Aplicada VN:</span>
+              <span className="bg-rose-50 text-rose-700 font-bold px-2 py-0.5 rounded-full border border-rose-200">
+                {formatPercent(metrics.vnTier)}
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2: DSR (20%) */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                DSR (20%)
+              </span>
+              <span className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                <ShieldCheck size={14} />
+              </span>
+            </div>
+            <div className="my-1">
+              <span className="text-2xl font-black text-slate-900 tracking-tight">
+                {formatBRL(metrics.dsr)}
+              </span>
+            </div>
+            <div className="border-t border-slate-100 pt-2 text-[10px] text-slate-500 flex items-center justify-between">
+              <span>Base de Cálculo</span>
+              <span className="font-semibold text-slate-700">VN + Margem + Retorno</span>
+            </div>
+          </div>
+
+          {/* Card 3: Comissão Bruta */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                Comissão Bruta
+              </span>
+              <span className="w-6 h-6 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
+                <Calculator size={14} />
+              </span>
+            </div>
+            <div className="my-1">
+              <span className="text-2xl font-black text-slate-900 tracking-tight">
+                {formatBRL(metrics.grossCommission)}
+              </span>
+            </div>
+            <div className="border-t border-slate-100 pt-2 text-[10px] text-slate-500 flex items-center justify-between">
+              <span>Origem</span>
+              <span className="font-semibold text-slate-700">Comissões + Extras</span>
+            </div>
+          </div>
+
+          {/* Card 4: Líquido Previsto a Receber (Hero Card Escuro Executivo) */}
+          <div 
+            className="bg-slate-900 text-white rounded-2xl p-4 border border-slate-800 flex flex-col justify-between print-dark-card shadow-none"
+            style={{ backgroundColor: '#0f172a', color: '#ffffff', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-sky-300">
+                Líquido Previsto a Receber
+              </span>
+              <span className="text-[10px] font-bold text-sky-200 bg-white/10 px-2 py-0.5 rounded border border-white/10">
+                {activeNetPercentage.toFixed(2)}%
+              </span>
+            </div>
+            <div className="my-1">
+              <span className="text-2xl font-black text-sky-400 tracking-tight">
+                {formatBRL(metrics.netCommission)}
+              </span>
+            </div>
+            <div className="border-t border-white/10 pt-2 text-[10px] text-slate-300 flex items-center justify-between">
+              <span>Alíquota Líquida Base:</span>
+              <span className="font-semibold text-white">{activeNetPercentage.toFixed(2)}%</span>
             </div>
           </div>
         </div>
 
-        {/* 1. Executive Top Dashboard */}
-        <section className="space-y-3">
+        {/* 1.3 Prêmios Extras Inline Strip (Print Page 1) */}
+        <div className="hidden print:flex items-center justify-between border border-slate-300 rounded-xl bg-slate-50/90 p-2 px-3 mb-3 text-[10px] text-slate-800 print-avoid-break">
+          <div className="flex items-center gap-4">
+            <span className="font-bold text-slate-900 uppercase tracking-wider text-[8.5px] bg-slate-200/90 px-2 py-0.5 rounded">
+              Prêmios Extras:
+            </span>
+            <span>Usados: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioUsados)}</strong></span>
+            <span>Águia: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioAguia)}</strong></span>
+            <span>Líder: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioLider)}</strong></span>
+            <span>NPS: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioNps)}</strong></span>
+          </div>
+          <div className="font-medium text-slate-700">
+            Total Extras: <span className="font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-300">{formatBRL(metrics.extrasTotal)}</span>
+          </div>
+        </div>
+
+        {/* 2. Screen Top Dashboard (Hidden on Print) */}
+        <section className="space-y-3 print:hidden">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
               Visão Geral do Mês
             </h2>
-            <div className="flex items-center gap-1 text-xs text-slate-500 print:hidden font-medium">
+            <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
               <Sparkles size={14} className="text-sky-600" />
               <span>Cálculos atualizados dinamicamente</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            
-            {/* CARD 1: Volume de Carros & Faixa VN */}
             <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200 relative overflow-hidden group">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-500">Volume Total & Faixa VN</span>
@@ -1049,7 +1278,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* CARD 2: DSR Calculado */}
             <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200 group">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-500">DSR (20%)</span>
@@ -1066,7 +1294,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* CARD 3: Comissão Bruta */}
             <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200 relative group">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
@@ -1074,7 +1301,7 @@ export default function App() {
                   <button 
                     type="button"
                     onClick={() => setShowCalculationModal(true)}
-                    className="text-slate-400 hover:text-sky-600 transition-colors p-0.5 rounded-md print:hidden cursor-pointer"
+                    className="text-slate-400 hover:text-sky-600 transition-colors p-0.5 rounded-md cursor-pointer"
                     title="Ver memória de cálculo"
                   >
                     <Info size={15} />
@@ -1083,7 +1310,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowCalculationModal(true)}
-                  className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center hover:bg-sky-100 transition-colors print:hidden cursor-pointer"
+                  className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center hover:bg-sky-100 transition-colors cursor-pointer"
                   title="Abrir detalhamento"
                 >
                   <ArrowUpRight size={16} />
@@ -1104,22 +1331,20 @@ export default function App() {
                 <button 
                   type="button"
                   onClick={() => setShowCalculationModal(true)}
-                  className="text-sky-600 hover:text-sky-700 font-semibold inline-flex items-center gap-1 print:hidden cursor-pointer"
+                  className="text-sky-600 hover:text-sky-700 font-semibold inline-flex items-center gap-1 cursor-pointer"
                 >
                   Memória de cálculo
                 </button>
-                <span className="hidden print:inline text-slate-700 font-medium">Integral</span>
               </div>
             </div>
 
-            {/* CARD 4: Comissão Líquida - Hero Card */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950 text-white shadow-md shadow-slate-900/10 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden print:bg-white print:text-black print:border-2 print:border-slate-800">
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950 text-white shadow-md shadow-slate-900/10 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
               <div className="flex items-center justify-between z-10">
-                <span className="text-xs font-semibold uppercase tracking-wider text-sky-300 print:text-slate-600">
+                <span className="text-xs font-semibold uppercase tracking-wider text-sky-300">
                   Líquido Previsto a Receber
                 </span>
                 
-                <div className="flex items-center bg-white/10 hover:bg-white/15 backdrop-blur-md rounded-lg border border-white/10 px-2 py-0.5 print:border-slate-400 print:bg-transparent">
+                <div className="flex items-center bg-white/10 hover:bg-white/15 backdrop-blur-md rounded-lg border border-white/10 px-2 py-0.5">
                   <input
                     type="number"
                     step="0.01"
@@ -1127,31 +1352,30 @@ export default function App() {
                     max="100"
                     value={activeNetPercentage}
                     onChange={(e) => handleUpdateActiveNetPercentage(parseFloat(e.target.value) || 0)}
-                    className="w-12 bg-transparent text-white font-bold text-xs text-right focus:outline-none print:text-black"
+                    className="w-12 bg-transparent text-white font-bold text-xs text-right focus:outline-none"
                   />
-                  <span className="text-sky-200 text-xs font-semibold ml-0.5 print:text-black">%</span>
+                  <span className="text-sky-200 text-xs font-semibold ml-0.5">%</span>
                 </div>
               </div>
 
               <div className="mt-4 z-10">
-                <span className="text-3xl font-extrabold text-sky-400 print:text-slate-900 tracking-tight">
+                <span className="text-3xl font-extrabold text-sky-400 tracking-tight">
                   {formatBRL(metrics.netCommission)}
                 </span>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-white/10 print:border-slate-300 flex items-center justify-between text-xs z-10">
-                <span className="text-slate-300 print:text-slate-600">Alíquota Líquida Base:</span>
-                <span className="font-semibold text-white print:text-slate-900">{activeNetPercentage.toFixed(2)}%</span>
+              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs z-10">
+                <span className="text-slate-300">Alíquota Líquida Base:</span>
+                <span className="font-semibold text-white">{activeNetPercentage.toFixed(2)}%</span>
               </div>
 
-              <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none print:hidden" />
+              <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
             </div>
-
           </div>
         </section>
 
-        {/* 2. Prêmios Manuais Resumo */}
-        <section className="space-y-3">
+        {/* 3. Screen Prêmios Manuais Resumo (Hidden on Print) */}
+        <section className="space-y-3 print:hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Resumo de Prêmios Manuais
@@ -1172,7 +1396,7 @@ export default function App() {
               return (
                 <div key={idx} className="bg-white border border-slate-200/80 rounded-xl p-3.5 flex items-center justify-between shadow-sm">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center print:hidden">
+                    <div className="w-7 h-7 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center">
                       <IconComp size={14} />
                     </div>
                     <div>
@@ -1186,9 +1410,9 @@ export default function App() {
           </div>
         </section>
 
-        {/* 3. Tabela de Lançamento de Vendas */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
+        {/* 4. Tabela de Lançamento de Vendas (Page 1) */}
+        <section className="space-y-3 print:space-y-0 print-avoid-break">
+          <div className="flex items-center justify-between print:hidden">
             <div>
               <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
                 Lançamento de Vendas
@@ -1198,79 +1422,79 @@ export default function App() {
               </p>
             </div>
             
-            <div className="text-xs text-slate-500 font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200/80 shadow-sm print:hidden">
+            <div className="text-xs text-slate-500 font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200/80 shadow-sm">
               Total de registros: <span className="font-bold text-slate-800">{activeSales.length}</span>
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden print:border-slate-300 print:shadow-none">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-100/60 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-semibold print:bg-slate-100">
+          <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden print:border print:border-slate-300 print:rounded-xl print:shadow-none print:overflow-visible">
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full text-left text-xs whitespace-nowrap print:text-[8.5px] print:w-full">
+                <thead className="bg-slate-100/60 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-semibold print:bg-slate-100 print:text-[8px] print:border-b print:border-slate-300">
                   <tr>
-                    <th className="px-3 py-3.5 font-semibold text-slate-700">Cliente</th>
-                    <th className="px-3 py-3.5 font-semibold text-slate-700">Carro</th>
+                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 font-semibold text-slate-700 print:text-slate-900">Cliente</th>
+                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 font-semibold text-slate-700 print:text-slate-900">Carro</th>
 
-                    <th className="px-3 py-2 text-right">
+                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700">VN (R$)</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80 font-mono tracking-tight">
-                          Total: {formatBRL(metrics.vnBase)}
+                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">VN (R$)</span>
+                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
+                          Tot: {formatBRL(metrics.vnBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2 text-right">
+                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700">Margem (R$)</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80 font-mono tracking-tight">
-                          Total: {formatBRL(metrics.marginBase)}
+                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Margem (R$)</span>
+                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
+                          Tot: {formatBRL(metrics.marginBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2 text-right">
+                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700">F&I (R$)</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80 font-mono tracking-tight">
-                          Total: {formatBRL(metrics.fAndIBase)}
+                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">F&I (R$)</span>
+                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
+                          Tot: {formatBRL(metrics.fAndIBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-3.5 text-center font-semibold text-slate-700">Retorno F&I</th>
+                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-center font-semibold text-slate-700 print:text-slate-900">Retorno F&I</th>
                     
-                    <th className="px-3 py-2 text-right">
+                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700">Valor SPF</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">
-                          Penetração: {formatPercent(metrics.spfPenetration)}
+                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Valor SPF</span>
+                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700">
+                          Penetr: {formatPercent(metrics.spfPenetration)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2 text-right">
+                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700">Acessórios</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">
+                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Acessórios</span>
+                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700">
                           T.M: {formatBRL(metrics.accTicketHeader)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2 text-right">
+                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700">Autobox (R$)</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200/80 font-mono tracking-tight">
-                          Total: {formatBRL(metrics.autoboxBase)}
+                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Autobox</span>
+                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
+                          Tot: {formatBRL(metrics.autoboxBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-3.5 text-right font-semibold text-slate-700">Emplac. (R$)</th>
-                    <th className="px-3 py-3.5 text-right font-semibold text-slate-700">Seguro (R$)</th>
-                    <th className="px-3 py-3.5 text-right font-semibold text-slate-700">Bônus (R$)</th>
-                    <th className="px-3 py-3.5 text-right font-semibold text-slate-700">Usados C. (R$)</th>
+                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Emplac. (R$)</th>
+                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Seguro (R$)</th>
+                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Bônus (R$)</th>
+                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Usados C. (R$)</th>
                     <th className="px-3 py-3.5 text-center font-semibold text-slate-700 print:hidden">Ações</th>
                   </tr>
                 </thead>
@@ -1278,21 +1502,21 @@ export default function App() {
                 <tbody className="divide-y divide-slate-100 print:divide-slate-200">
                   {activeSales.length === 0 ? (
                     <tr>
-                      <td colSpan="14" className="text-center py-16 px-4">
+                      <td colSpan="14" className="text-center py-16 print:py-6 px-4">
                         <div className="max-w-md mx-auto flex flex-col items-center justify-center text-center">
-                          <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-400 mb-3 shadow-xs">
+                          <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-400 mb-3 shadow-xs print:hidden">
                             <ClipboardList size={26} strokeWidth={1.8} className="text-slate-400" />
                           </div>
                           <h4 className="text-sm font-bold text-slate-800 tracking-tight">
                             Nenhuma venda registrada neste mês
                           </h4>
-                          <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                          <p className="text-xs text-slate-500 mt-1 max-w-sm print:hidden">
                             Seus lançamentos comerciais e cálculos em tempo real aparecerão aqui assim que você cadastrar o primeiro veículo.
                           </p>
                           <button
                             type="button"
                             onClick={() => setIsAddModalOpen(true)}
-                            className="mt-4 inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
+                            className="mt-4 inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer print:hidden"
                           >
                             <Plus size={15} strokeWidth={2.5} />
                             <span>Clique em + Adicionar Nova Venda para iniciar</span>
@@ -1304,57 +1528,57 @@ export default function App() {
                     activeSales.map((sale, index) => (
                       <tr 
                         key={sale.id} 
-                        className="hover:bg-slate-50/70 transition-colors duration-150 group print:hover:bg-transparent"
+                        className="hover:bg-slate-50/70 transition-colors duration-150 group print:hover:bg-transparent print:border-b print:border-slate-200"
                       >
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <input 
                             type="text" 
                             value={sale.client} 
                             onChange={(e) => handleSaleChange(sale.id, 'client', e.target.value)}
                             placeholder={`Cliente ${index + 1}`}
-                            className="w-32 min-w-[130px] bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0"
+                            className="w-32 min-w-[130px] print:w-full print:min-w-0 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[8.5px] print:text-slate-900 print:truncate print:h-auto"
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <input 
                             type="text" 
                             value={sale.car} 
                             onChange={(e) => handleSaleChange(sale.id, 'car', e.target.value)}
                             placeholder="Modelo"
-                            className="w-32 min-w-[130px] bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0"
+                            className="w-32 min-w-[130px] print:w-full print:min-w-0 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[8.5px] print:text-slate-900 print:truncate print:h-auto"
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.vn} 
                             onChange={(v) => handleSaleChange(sale.id, 'vn', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.margin} 
                             onChange={(v) => handleSaleChange(sale.id, 'margin', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.fAndI} 
                             onChange={(v) => handleSaleChange(sale.id, 'fAndI', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 text-center">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1 text-center">
                           <select 
                             value={sale.returnFAndI} 
                             onChange={(e) => handleSaleChange(sale.id, 'returnFAndI', e.target.value)}
-                            className="bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-2 py-1.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all cursor-pointer print:bg-transparent print:border-none print:appearance-none print:p-0"
+                            className="bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-2 py-1.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all cursor-pointer print:bg-transparent print:border-none print:appearance-none print:p-0 print:text-[8.5px] print:text-center print:text-slate-900"
                           >
                             <option value="R0">R0 (0%)</option>
                             <option value="R1">R1 (1,2%)</option>
@@ -1364,57 +1588,57 @@ export default function App() {
                           </select>
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.spf} 
                             onChange={(v) => handleSaleChange(sale.id, 'spf', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.accessories} 
                             onChange={(v) => handleSaleChange(sale.id, 'accessories', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.autobox} 
                             onChange={(v) => handleSaleChange(sale.id, 'autobox', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.emplacamento} 
                             onChange={(v) => handleSaleChange(sale.id, 'emplacamento', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.seguro} 
                             onChange={(v) => handleSaleChange(sale.id, 'seguro', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.bonusCarro} 
                             onChange={(v) => handleSaleChange(sale.id, 'bonusCarro', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2">
+                        <td className="px-2 py-2 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] text-right" 
+                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
                             value={sale.usadosCaptados} 
                             onChange={(v) => handleSaleChange(sale.id, 'usadosCaptados', v)} 
                           />
@@ -1454,8 +1678,8 @@ export default function App() {
           </div>
         </section>
 
-        {/* 4. Lançamentos Extras */}
-        <section className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 sm:p-8 space-y-4 print:border-slate-300 print:shadow-none">
+        {/* 5. Screen Lançamentos Extras Form (Hidden on Print) */}
+        <section className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 sm:p-8 space-y-4 print:hidden">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
               <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
@@ -1513,8 +1737,8 @@ export default function App() {
           </div>
         </section>
 
-        {/* 5. Painel Analítico BI */}
-        <section className="space-y-4 print:space-y-3 bi-section">
+        {/* 6. Screen BI Analytics Charts (Hidden on Print - Rendered on Page 2 in Print) */}
+        <section className="space-y-4 print:hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div>
               <div className="flex items-center gap-2">
@@ -1535,8 +1759,7 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            {/* Gráfico 1: Volume por Modelo */}
+            {/* Gráfico 1: Volume por Modelo (Screen) */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
@@ -1639,7 +1862,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Gráfico 2: Composição da Comissão Bruta */}
+            {/* Gráfico 2: Composição da Comissão Bruta (Screen) */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
@@ -1776,16 +1999,278 @@ export default function App() {
                 </span>
               </div>
             </div>
-
           </div>
         </section>
+
+        {/* =========================================================================
+            PÁGINA 2 DA IMPRESSÃO (AUDITORIA, MEMÓRIA DE CÁLCULO & ANALYTICS BI)
+           ========================================================================= */}
+        <div className="hidden print:block print-page-break print:break-before-page pt-3">
+          
+          {/* 2.1 Print Header for Page 2 */}
+          <div className="flex items-center justify-between border-b border-slate-300 pb-2 mb-3 text-slate-900 print-avoid-break">
+            <div className="flex items-baseline gap-2.5">
+              <h2 className="text-base font-black tracking-tight text-slate-900 leading-none">
+                Auditoria & Inteligência Estratégica
+              </h2>
+              <span className="text-[10.5px] text-slate-600 font-semibold">
+                Competência: <strong>{activeMonth.mes} / {activeMonth.ano}</strong>
+              </span>
+              <span className="text-[9.5px] text-slate-400">• Página 2 de 2</span>
+            </div>
+            <div className="text-[10px] text-slate-600">
+              Comissão Bruta Consolidada: <strong className="text-slate-900 font-black">{formatBRL(metrics.grossCommission)}</strong>
+            </div>
+          </div>
+
+          {/* 2.2 Memória de Cálculo Completa Estática (Auditoria dos 10 Itens) */}
+          <div className="border border-slate-200 rounded-2xl bg-white p-4 mb-4 print-avoid-break">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2 text-slate-900">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded bg-sky-50 text-sky-600 flex items-center justify-center">
+                  <Calculator size={13} />
+                </div>
+                <h3 className="text-[10.5px] font-bold tracking-tight text-slate-900 uppercase">
+                  Memória de Cálculo — Detalhamento transparente da apuração da Comissão Bruta
+                </h3>
+              </div>
+              <span className="text-[8.5px] text-slate-500 font-semibold">
+                Regras Contratuais & Índices Reativos
+              </span>
+            </div>
+
+            <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-3 text-[9.5px]">
+              <div className="grid grid-cols-2 gap-x-6">
+                
+                {/* Coluna Esquerda: Itens 1 a 5 */}
+                <div className="space-y-1.5 divide-y divide-slate-100">
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">1. Comissão Valor da Nota (VN)</span>
+                      <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.vnBase)} × {formatPercent(metrics.vnTier)} ({metrics.volume} veículos)</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.commissionVn)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1.5">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">2. Comissão Margem</span>
+                      <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.marginBase)} × {formatPercent(metrics.marginTier)}</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.commissionMargin)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1.5">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">3. Retorno F&I</span>
+                      <span className="text-[8.5px] text-slate-500">Base Retorno F&I ({formatBRL(metrics.fAndIBaseRetorno)}) × Acelerador SPF ({formatPercent(metrics.fAndIAccelerator)})</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.commissionRetornoFAndI)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1.5">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">4. Comissão SPF</span>
+                      <span className="text-[8.5px] text-slate-500">{metrics.spfCount} contratos com SPF × R$ 100,00</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.commissionSpf)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1.5">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">5. Comissão Acessórios</span>
+                      <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.accBase)} × {formatPercent(metrics.accTier)} (T.M.: {formatBRL(metrics.accTicketCommission)})</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.commissionAcc)}</span>
+                  </div>
+                </div>
+
+                {/* Coluna Direita: Itens 6 a 10 */}
+                <div className="space-y-1.5 divide-y divide-slate-100">
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">6. Comissão Autobox</span>
+                      <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.autoboxBase)} × 4,5%</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.commissionAutobox)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1.5">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">7. Comissão Emplacamento</span>
+                      <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.empBase)} × {formatPercent(metrics.empTier)} (Penetração: {formatPercent(metrics.empPenetration)})</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.commissionEmp)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1.5">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">8. Premiações Diretas da Tabela</span>
+                      <span className="text-[8.5px] text-slate-500">Seguros ({formatBRL(metrics.seguroTotal)}) + Bônus ({formatBRL(metrics.bonusCarroTotal)}) + Usados C. ({formatBRL(metrics.usadosCaptadosTotal)})</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.commissionDirects)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1.5">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">9. DSR (Descanso Semanal Remunerado)</span>
+                      <span className="text-[8.5px] text-slate-500">20% sobre (VN + Margem + Retorno F&I)</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.dsr)}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1.5">
+                    <div>
+                      <span className="font-semibold text-slate-800 block">10. Lançamentos Extras Manuais</span>
+                      <span className="text-[8.5px] text-slate-500">Usados ({formatBRL(activeExtras.premioUsados)}) + Águia ({formatBRL(activeExtras.premioAguia)}) + Líder ({formatBRL(activeExtras.premioLider)}) + NPS ({formatBRL(activeExtras.premioNps)})</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatBRL(metrics.extrasTotal)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card de Fechamento Consolidado no Print */}
+              <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5 px-3 flex justify-between items-center mt-2.5">
+                <div>
+                  <span className="text-[10px] font-bold text-sky-950 block">Total Geral Bruto Apurado</span>
+                  <span className="text-[9px] text-sky-700">
+                    Previsão Líquida ({activeNetPercentage.toFixed(2)}%): <strong className="font-bold text-slate-900">{formatBRL(metrics.netCommission)}</strong>
+                  </span>
+                </div>
+                <span className="text-lg font-black text-sky-700">{formatBRL(metrics.grossCommission)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2.3 Os Dois Gráficos Analíticos de BI no Print (Lado a Lado) */}
+          <div className="grid grid-cols-2 gap-4 print-avoid-break">
+            
+            {/* Gráfico 1 Print: Volume por Modelo */}
+            <div className="border border-slate-200 rounded-2xl p-3.5 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded bg-sky-50 text-sky-600 flex items-center justify-center">
+                    <BarChart3 size={12} />
+                  </div>
+                  <h4 className="text-[10px] font-bold text-slate-900 uppercase">
+                    Volume por Modelo (Mix Comercial)
+                  </h4>
+                </div>
+                <span className="text-[8px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
+                  {modelVolumeData.length} modelos
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                {modelVolumeData.length === 0 ? (
+                  <div className="py-8 text-center text-[9px] text-slate-400">
+                    Nenhum modelo cadastrado
+                  </div>
+                ) : (
+                  modelVolumeData.slice(0, 6).map((item, idx) => {
+                    const maxCount = modelVolumeData[0]?.count || 1;
+                    const barWidth = Math.max(10, (item.count / maxCount) * 100);
+
+                    return (
+                      <div key={item.model} className="p-1 px-1.5 rounded-lg border border-slate-100 bg-slate-50/50">
+                        <div className="flex items-center justify-between text-[8.5px] mb-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-3.5 h-3.5 rounded bg-slate-200 text-slate-800 text-[7px] font-bold flex items-center justify-center">
+                              #{idx + 1}
+                            </span>
+                            <span className="font-bold text-slate-800">{item.model}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-black text-slate-900">{item.count} unid.</span>
+                            <span className="text-[7.5px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100">
+                              {item.percentage.toFixed(1).replace('.', ',')}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-slate-200/80 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            style={{ width: `${barWidth}%` }}
+                            className="h-full rounded-full bg-sky-600"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Gráfico 2 Print: Composição da Comissão Bruta (Donut) */}
+            <div className="border border-slate-200 rounded-2xl p-3.5 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <PieChart size={12} />
+                  </div>
+                  <h4 className="text-[10px] font-bold text-slate-900 uppercase">
+                    Composição da Comissão Bruta
+                  </h4>
+                </div>
+                <span className="text-[8px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">
+                  {grossCommissionSlices.length} fontes ativas
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-1">
+                {grossCommissionSlices.length === 0 ? (
+                  <div className="py-8 text-center text-[9px] text-slate-400 w-full">
+                    Nenhuma receita lançada
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative w-[120px] h-[120px] shrink-0 flex items-center justify-center">
+                      <svg width="120" height="120" viewBox="0 0 220 220" className="overflow-visible">
+                        {donutGeometry.map((slice) => (
+                          <path
+                            key={slice.id}
+                            d={slice.pathData}
+                            fill={slice.color}
+                          />
+                        ))}
+                      </svg>
+                      <div className="absolute inset-0 m-auto w-[62px] h-[62px] rounded-full bg-white border border-slate-200 flex flex-col items-center justify-center text-center p-0.5">
+                        <span className="text-[7px] font-bold text-slate-400 uppercase leading-none">Total</span>
+                        <span className="text-[8px] font-black text-slate-900 truncate max-w-[56px] mt-0.5">
+                          {formatBRL(metrics.grossCommission)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 space-y-0.5 text-[8px]">
+                      {grossCommissionSlices.map((slice) => (
+                        <div key={slice.id} className="flex items-center justify-between py-0.5 px-1 border-b border-slate-50 last:border-none">
+                          <div className="flex items-center gap-1.5 min-w-0 pr-1">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                            <span className="font-medium text-slate-700 truncate">{slice.label}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="font-bold text-slate-900">{formatBRL(slice.value)}</span>
+                            <span className="text-[7px] font-bold text-slate-500 w-6 text-right">
+                              {slice.percent.toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
 
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-['Inter',sans-serif] antialiased selection:bg-sky-100 selection:text-sky-900 pb-24 print:bg-white print:p-0 print:pb-0">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-['Inter',sans-serif] antialiased selection:bg-sky-100 selection:text-sky-900 pb-24 print:bg-white print:p-0 print:pb-0 print:min-h-0">
       
       {/* Toast Notification */}
       {toast && (
@@ -1799,7 +2284,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Top Header */}
+      {/* Main Top Header (Screen only) */}
       <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-sm print:hidden">
         <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           
@@ -1869,7 +2354,7 @@ export default function App() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-[1440px] mx-auto px-6 pt-8 print:px-0 print:pt-0">
+      <main className="max-w-[1440px] mx-auto px-6 pt-8 print:px-0 print:pt-0 print:max-w-none print:m-0 print:w-full">
         {currentScreen === 'HUB' ? renderHubScreen() : renderDetailScreen()}
       </main>
 
@@ -2002,14 +2487,13 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: Memória de Cálculo da Comissão Bruta */}
+      {/* MODAL: Memória de Cálculo da Comissão Bruta (Screen Popover) */}
       {showCalculationModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCalculationModal(false); }}
         >
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200">
-            
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
@@ -2031,7 +2515,6 @@ export default function App() {
 
             <div className="overflow-y-auto p-6 space-y-4 flex-1 text-xs">
               <div className="divide-y divide-slate-100 bg-slate-50/70 border border-slate-200/80 rounded-2xl p-3.5 space-y-2.5">
-                
                 <div className="flex items-center justify-between pt-1">
                   <div>
                     <span className="font-semibold text-slate-800 block">1. Comissão Valor da Nota (VN)</span>
@@ -2051,7 +2534,7 @@ export default function App() {
                 <div className="flex items-center justify-between pt-2">
                   <div>
                     <span className="font-semibold text-slate-800 block">3. Retorno F&I</span>
-                    <span className="text-[11px] text-slate-500">Base Retorno F&I × Acelerador SPF ({formatPercent(metrics.fAndIAccelerator)})</span>
+                    <span className="text-[11px] text-slate-500">Base Retorno F&I ({formatBRL(metrics.fAndIBaseRetorno)}) × Acelerador SPF ({formatPercent(metrics.fAndIAccelerator)})</span>
                   </div>
                   <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionRetornoFAndI)}</span>
                 </div>
@@ -2059,7 +2542,7 @@ export default function App() {
                 <div className="flex items-center justify-between pt-2">
                   <div>
                     <span className="font-semibold text-slate-800 block">4. Comissão SPF</span>
-                    <span className="text-[11px] text-slate-500">{activeSales.filter(s => (s.spf || 0) > 0).length} contratos com SPF × R$ 100,00</span>
+                    <span className="text-[11px] text-slate-500">{metrics.spfCount} contratos com SPF × R$ 100,00</span>
                   </div>
                   <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionSpf)}</span>
                 </div>
@@ -2111,7 +2594,6 @@ export default function App() {
                   </div>
                   <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.extrasTotal)}</span>
                 </div>
-
               </div>
 
               <div className="p-4 bg-sky-50/80 border border-sky-200/70 rounded-2xl flex items-center justify-between">
@@ -2132,7 +2614,6 @@ export default function App() {
                 Concluir Visualização
               </button>
             </div>
-
           </div>
         </div>
       )}
@@ -2144,7 +2625,6 @@ export default function App() {
           onClick={(e) => { if (e.target === e.currentTarget) setIsAddModalOpen(false); }}
         >
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200">
-            
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
@@ -2165,8 +2645,6 @@ export default function App() {
             </div>
 
             <div className="overflow-y-auto p-6 space-y-5 flex-1 text-xs">
-              
-              {/* Grupo 1: Identificação Básica */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-sky-500"></span>
@@ -2200,7 +2678,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Grupo 2: Valores Principais */}
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-sky-500"></span>
@@ -2232,7 +2709,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Grupo 3: F&I e Financiamento */}
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-sky-500"></span>
@@ -2280,7 +2756,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Grupo 4: Serviços e Acessórios Agregados */}
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-sky-500"></span>
@@ -2334,7 +2809,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Grupo 5: Premiações Diretas */}
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
                   <span className="w-2 h-2 rounded-full bg-sky-500"></span>
@@ -2365,7 +2839,6 @@ export default function App() {
                   </div>
                 </div>
               </div>
-
             </div>
 
             <div className="px-6 py-4 bg-slate-50/90 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 sticky bottom-0 z-10">
@@ -2385,30 +2858,54 @@ export default function App() {
                 <span>Salvar Venda</span>
               </button>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* Media Print Stylesheet */}
+      {}
       <style>{`
         @media print {
-          body {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-          }
           @page {
             size: A4 landscape;
-            margin: 10mm;
+            margin: 6mm 8mm;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+          }
+          html, body {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            font-size: 8.5px !important;
+            line-height: 1.15 !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .print-page-break {
+            break-before: page !important;
+            page-break-before: always !important;
+          }
+          .print-avoid-break {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .print-dark-card {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
           }
           input, select {
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
-          }
-          .bi-section {
-            break-inside: avoid;
-            page-break-inside: avoid;
+            background: transparent !important;
+            color: #0f172a !important;
+            font-size: 8.5px !important;
+            height: auto !important;
+            width: 100% !important;
           }
         }
       `}</style>
