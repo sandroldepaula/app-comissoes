@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Car, 
-  Download, 
-  Upload, 
   Printer, 
   Plus, 
+  Pencil,
   Trash2, 
   TrendingUp, 
   Award, 
@@ -20,12 +19,10 @@ import {
   PieChart, 
   ClipboardList, 
   ArrowLeft, 
-  Cloud, 
   Calendar, 
   Target, 
   ChevronRight, 
-  AlertTriangle, 
-  RefreshCw 
+  AlertTriangle 
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://hhmtsvicjtqydrjvacze.supabase.co';
@@ -219,7 +216,7 @@ const CurrencyInput = ({ value, onChange, className, placeholder, disabled }) =>
       onChange={handleChange}
       disabled={disabled}
       placeholder={placeholder || "R$ 0,00"}
-      className={`bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2 py-1 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[8.5px] print:font-semibold print:text-slate-900 print:text-right print:shadow-none print:h-auto ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className || ''}`}
+      className={`bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-1.5 py-1.5 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[8.5px] print:font-semibold print:text-slate-900 print:text-right print:shadow-none print:h-auto ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className || ''}`}
     />
   );
 };
@@ -351,7 +348,6 @@ export default function App() {
 
   const [currentScreen, setCurrentScreen] = useState('HUB');
   const [selectedMonthId, setSelectedMonthId] = useState(null);
-  const [syncStatus, setSyncStatus] = useState('connecting');
 
   const [months, setMonths] = useState(() => {
     const local = localStorage.getItem('auto_months_hub_v1');
@@ -376,15 +372,22 @@ export default function App() {
   });
 
   const [isCreateMonthOpen, setIsCreateMonthOpen] = useState(false);
+  const [isEditMonthOpen, setIsEditMonthOpen] = useState(false);
+  const [monthToEdit, setMonthToEdit] = useState(null);
   const [monthToDelete, setMonthToDelete] = useState(null);
   const [showCalculationModal, setShowCalculationModal] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [toast, setToast] = useState(null);
-  const fileInputRef = useRef(null);
 
   const [newMonthForm, setNewMonthForm] = useState({
     mes: MONTH_NAMES[new Date().getMonth()] || 'Setembro',
     ano: new Date().getFullYear() || 2026,
+    meta: 15
+  });
+
+  const [editMonthForm, setEditMonthForm] = useState({
+    mes: 'Setembro',
+    ano: 2026,
     meta: 15
   });
 
@@ -407,7 +410,6 @@ export default function App() {
 
   const syncMonthToSupabase = async (monthObj) => {
     try {
-      setSyncStatus('saving');
       const payload = {
         id: String(monthObj.id),
         nome_mes: String(monthObj.mes || ''),
@@ -419,18 +421,15 @@ export default function App() {
 
       const { error } = await supabase.from('meses').upsert(payload, { onConflict: 'id' });
       if (error) throw error;
-      setSyncStatus('synced');
     } catch (err) {
       console.warn('Falha no upload do mês:', err);
-      setSyncStatus('offline');
-      showNotification(`Erro ao sincronizar mês com o Supabase: ${err.message || 'Falha de comunicação'}`, 'error');
+      showNotification(`Erro ao sincronizar mês com a nuvem: ${err.message || 'Falha de comunicação'}`, 'error');
       throw err;
     }
   };
 
   const syncSalesToSupabase = async (mId, salesList) => {
     try {
-      setSyncStatus('saving');
       const payload = salesList.map(s => ({
         id: String(s.id),
         mes_id: String(mId),
@@ -456,11 +455,9 @@ export default function App() {
         const { error: insError } = await supabase.from('vendas').insert(payload);
         if (insError) throw insError;
       }
-      setSyncStatus('synced');
     } catch (err) {
       console.warn('Falha no upload de vendas:', err);
-      setSyncStatus('offline');
-      showNotification(`Erro ao sincronizar vendas com o Supabase: ${err.message || 'Falha de comunicação'}`, 'error');
+      showNotification(`Erro ao sincronizar vendas com a nuvem: ${err.message || 'Falha de comunicação'}`, 'error');
       throw err;
     }
   };
@@ -477,7 +474,6 @@ export default function App() {
     let isSubscribed = true;
 
     const fetchFromSupabase = async () => {
-      setSyncStatus('connecting');
       try {
         const { data: dbMonths, error: monthsErr } = await supabase
           .from('meses')
@@ -501,7 +497,6 @@ export default function App() {
           if (dbMonths.length === 0 && Array.isArray(localMonthsData) && localMonthsData.length > 0) {
             setMonths(localMonthsData);
             setSalesByMonth(localSalesData);
-            setSyncStatus('saving');
 
             try {
               for (const m of localMonthsData) {
@@ -511,12 +506,8 @@ export default function App() {
                   await syncSalesToSupabase(String(m.id), sales);
                 }
               }
-              setSyncStatus('synced');
-              showNotification('Dados locais preservados e sincronizados com a nuvem!');
             } catch (errSync) {
               console.warn('Erro ao subir dados locais para nuvem:', errSync);
-              setSyncStatus('offline');
-              showNotification(`Dados locais mantidos. Falha na sincronização: ${errSync.message}`, 'error');
             }
             return;
           }
@@ -562,12 +553,9 @@ export default function App() {
             });
             setSalesByMonth(mapped);
           }
-          setSyncStatus('synced');
         }
       } catch (err) {
         console.warn('Conexão Supabase em modo contingência:', err);
-        setSyncStatus('offline');
-        showNotification(`Falha ao conectar com o Supabase: ${err.message}`, 'error');
       }
     };
 
@@ -576,7 +564,7 @@ export default function App() {
     return () => {
       isSubscribed = false;
     };
-  }, [showNotification]);
+  }, []);
 
   const activeMonth = useMemo(() => {
     if (!selectedMonthId) return null;
@@ -620,17 +608,17 @@ export default function App() {
 
   const grossCommissionSlices = useMemo(() => {
     const rawSlices = [
-      { id: 'vn', label: 'Comissão VN', value: metrics.commissionVn, color: '#0284C7' },
-      { id: 'margem', label: 'Comissão Margem', value: metrics.commissionMargin, color: '#0EA5E9' },
-      { id: 'retorno', label: 'Retorno F&I', value: metrics.commissionRetornoFAndI, color: '#6366F1' },
-      { id: 'spf', label: 'Comissão SPF', value: metrics.commissionSpf, color: '#8B5CF6' },
-      { id: 'acessorios', label: 'Comissão Acessórios', value: metrics.commissionAcc, color: '#EC4899' },
-      { id: 'autobox', label: 'Comissão Autobox', value: metrics.commissionAutobox, color: '#F43F5E' },
-      { id: 'emplacamento', label: 'Comissão Emplacamento', value: metrics.commissionEmp, color: '#F97316' },
-      { id: 'seguro', label: 'Seguros', value: metrics.seguroTotal, color: '#EAB308' },
-      { id: 'bonus_usados', label: 'Bônus Carro + Usados C.', value: metrics.bonusCarroTotal + metrics.usadosCaptadosTotal, color: '#10B981' },
-      { id: 'dsr', label: 'DSR (20%)', value: metrics.dsr, color: '#14B8A6' },
-      { id: 'extras', label: 'Lançamentos Extras', value: metrics.extrasTotal, color: '#3B82F6' },
+      { id: 'vn', label: 'Comissão VN', shortLabel: 'VN', value: metrics.commissionVn, color: '#0284C7' },
+      { id: 'margem', label: 'Comissão Margem', shortLabel: 'Margem', value: metrics.commissionMargin, color: '#0EA5E9' },
+      { id: 'retorno', label: 'Retorno F&I', shortLabel: 'Retorno F&I', value: metrics.commissionRetornoFAndI, color: '#6366F1' },
+      { id: 'spf', label: 'Comissão SPF', shortLabel: 'SPF', value: metrics.commissionSpf, color: '#8B5CF6' },
+      { id: 'acessorios', label: 'Comissão Acessórios', shortLabel: 'Acessórios', value: metrics.commissionAcc, color: '#EC4899' },
+      { id: 'autobox', label: 'Comissão Autobox', shortLabel: 'Autobox', value: metrics.commissionAutobox, color: '#F43F5E' },
+      { id: 'emplacamento', label: 'Comissão Emplacamento', shortLabel: 'Emplacamento', value: metrics.commissionEmp, color: '#F97316' },
+      { id: 'seguro', label: 'Seguros', shortLabel: 'Seguro', value: metrics.seguroTotal, color: '#EAB308' },
+      { id: 'bonus_usados', label: 'Bônus Carro + Usados C.', shortLabel: 'Bônus / Usados', value: metrics.bonusCarroTotal + metrics.usadosCaptadosTotal, color: '#10B981' },
+      { id: 'dsr', label: 'DSR (20%)', shortLabel: 'DSR (20%)', value: metrics.dsr, color: '#14B8A6' },
+      { id: 'extras', label: 'Lançamentos Extras', shortLabel: 'Extras', value: metrics.extrasTotal, color: '#3B82F6' },
     ];
 
     const valid = rawSlices.filter(slice => slice.value > 0.009);
@@ -647,10 +635,10 @@ export default function App() {
     if (total <= 0) return [];
 
     let accumulatedAngle = 0;
-    const cx = 110;
-    const cy = 110;
-    const outerR = 86;
-    const innerR = 58;
+    const cx = 125;
+    const cy = 125;
+    const outerR = 100;
+    const innerR = 68;
 
     return grossCommissionSlices.map((slice, index) => {
       const sweep = (slice.value / total) * 360;
@@ -694,6 +682,8 @@ export default function App() {
         setShowCalculationModal(false);
         setIsAddModalOpen(false);
         setIsCreateMonthOpen(false);
+        setIsEditMonthOpen(false);
+        setMonthToEdit(null);
         setMonthToDelete(null);
       }
     };
@@ -713,7 +703,6 @@ export default function App() {
       extras: DEFAULT_EXTRAS
     };
 
-    setSyncStatus('saving');
     try {
       await syncMonthToSupabase(createdMonth);
       setMonths(prev => [createdMonth, ...prev]);
@@ -729,7 +718,42 @@ export default function App() {
       setIsCreateMonthOpen(false);
       setSelectedMonthId(newId);
       setCurrentScreen('DETAIL');
-      showNotification(`Mês criado localmente. Erro no Supabase: ${err.message}`, 'error');
+      showNotification(`Mês criado localmente. Erro na nuvem: ${err.message}`, 'error');
+    }
+  };
+
+  const handleOpenEditMonth = (m) => {
+    setMonthToEdit(m);
+    setEditMonthForm({
+      mes: m.mes,
+      ano: Number(m.ano) || 2026,
+      meta: Number(m.meta) || 15
+    });
+    setIsEditMonthOpen(true);
+  };
+
+  const handleUpdateMonth = async (e) => {
+    e.preventDefault();
+    if (!monthToEdit) return;
+
+    const updatedMonth = {
+      ...monthToEdit,
+      mes: editMonthForm.mes,
+      ano: String(editMonthForm.ano || '2026'),
+      meta: Number(editMonthForm.meta) || 0
+    };
+
+    const nextMonths = months.map(m => String(m.id) === String(updatedMonth.id) ? updatedMonth : m);
+    setMonths(nextMonths);
+    setIsEditMonthOpen(false);
+    setMonthToEdit(null);
+
+    try {
+      await syncMonthToSupabase(updatedMonth);
+      showNotification("Competência atualizada com sucesso!");
+    } catch (err) {
+      console.error("Erro ao atualizar mês:", err);
+      showNotification(`Competência salva localmente. Erro na nuvem: ${err.message}`, "error");
     }
   };
 
@@ -761,7 +785,6 @@ export default function App() {
     } catch (e) {
       console.warn('Erro ao remover do Supabase:', e);
       showNotification(`Erro ao excluir mês no Supabase: ${e.message}`, 'error');
-      setSyncStatus('offline');
     }
   };
 
@@ -839,77 +862,6 @@ export default function App() {
     syncSalesToSupabase(selectedMonthId, nextSales);
   };
 
-  const exportData = () => {
-    const dataStr = JSON.stringify({
-      months,
-      salesByMonth,
-      exportedAt: new Date().toISOString()
-    }, null, 2);
-
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `comissoes_gestao_backup_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    showNotification("Backup exportado com sucesso!");
-  };
-
-  const importData = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const json = JSON.parse(event.target.result);
-        if (Array.isArray(json.months)) setMonths(json.months);
-        if (json.salesByMonth && typeof json.salesByMonth === 'object') {
-          setSalesByMonth(json.salesByMonth);
-        } else if (Array.isArray(json.sales) && json.months?.[0]?.id) {
-          setSalesByMonth({ [json.months[0].id]: json.sales });
-        }
-        showNotification("Dados restaurados com êxito!");
-      } catch (err) {
-        showNotification("Arquivo inválido. Certifique-se de ser um JSON válido.", "error");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = null;
-  };
-
-  const renderSyncBadge = () => {
-    if (syncStatus === 'synced') {
-      return (
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-xs font-semibold shadow-xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Nuvem Conectada</span>
-        </div>
-      );
-    }
-    if (syncStatus === 'saving') {
-      return (
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-700 text-xs font-semibold">
-          <RefreshCw size={12} className="animate-spin text-sky-600" />
-          <span>Salvando...</span>
-        </div>
-      );
-    }
-    if (syncStatus === 'connecting') {
-      return (
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">
-          <RefreshCw size={12} className="animate-spin text-amber-600" />
-          <span>Conectando à Nuvem...</span>
-        </div>
-      );
-    }
-    return (
-      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-xs font-medium">
-        <Cloud size={13} className="text-slate-500" />
-        <span>Modo Local (Offline)</span>
-      </div>
-    );
-  };
-
   const renderHubScreen = () => {
     return (
       <div className="space-y-8 animate-in fade-in duration-200">
@@ -919,7 +871,7 @@ export default function App() {
               <span className="text-xs font-bold uppercase tracking-wider text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100">
                 Multi-Competência
               </span>
-              <span className="text-xs text-slate-400 font-medium">Sincronização em Tempo Real</span>
+              <span className="text-xs text-slate-400 font-medium">Gestão Comercial Automotiva</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight mt-2">
               Competências Comerciais
@@ -992,17 +944,31 @@ export default function App() {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMonthToDelete(m);
-                        }}
-                        className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-xl transition-colors cursor-pointer"
-                        title="Excluir Mês"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEditMonth(m);
+                          }}
+                          className="text-slate-400 hover:text-sky-600 hover:bg-sky-50 p-2 rounded-xl transition-colors cursor-pointer"
+                          title="Editar Competência"
+                        >
+                          <Pencil size={16} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMonthToDelete(m);
+                          }}
+                          className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-xl transition-colors cursor-pointer"
+                          title="Excluir Mês"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="space-y-1.5 pt-1">
@@ -1081,7 +1047,7 @@ export default function App() {
     return (
       <div className="space-y-8 print:space-y-0 animate-in fade-in duration-200">
         
-        {/* Navigation Bar for Selected Month (Screen only) */}
+        {/* Navigation Bar for Selected Month (Cleaned, without cloud badge) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 px-6 shadow-sm print:hidden">
           <div className="flex items-center gap-3">
             <button
@@ -1102,17 +1068,12 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1 text-xs text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 font-medium">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2 font-medium">
               <Target size={14} className="text-sky-600" />
               <span>Meta: <strong>{activeMonth.meta}</strong> veículos</span>
             </div>
-            {renderSyncBadge()}
           </div>
         </div>
-
-        {/* =========================================================================
-            PÁGINA 1 DA IMPRESSÃO (OPERACIONAL & FECHAMENTO COMERCIAL)
-           ========================================================================= */}
 
         {/* 1.1 Print Executive Header (Page 1 Top) */}
         <div className="hidden print:flex items-center justify-between border-b border-slate-300 pb-2 mb-3 text-slate-900">
@@ -1137,10 +1098,9 @@ export default function App() {
           </div>
         </div>
 
-        {/* 1.2 Os 4 Cards Executivos Oficiais no Print (Restaurados com Design Premium Original) */}
+        {/* 1.2 Os 4 Cards Executivos Oficiais no Print */}
         <div className="hidden print:grid print:grid-cols-4 print:gap-4 print:mb-3 print-avoid-break">
           
-          {/* Card 1: Volume Total & Faixa VN */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -1163,7 +1123,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Card 2: DSR (20%) */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -1184,7 +1143,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Card 3: Comissão Bruta */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -1205,7 +1163,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Card 4: Líquido Previsto a Receber (Hero Card Escuro Executivo) */}
           <div 
             className="bg-slate-900 text-white rounded-2xl p-4 border border-slate-800 flex flex-col justify-between print-dark-card shadow-none"
             style={{ backgroundColor: '#0f172a', color: '#ffffff', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
@@ -1246,7 +1203,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* 2. Screen Top Dashboard (Hidden on Print) */}
         <section className="space-y-3 print:hidden">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
@@ -1374,7 +1330,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* 3. Screen Prêmios Manuais Resumo (Hidden on Print) */}
         <section className="space-y-3 print:hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -1410,7 +1365,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* 4. Tabela de Lançamento de Vendas (Page 1) */}
         <section className="space-y-3 print:space-y-0 print-avoid-break">
           <div className="flex items-center justify-between print:hidden">
             <div>
@@ -1428,74 +1382,74 @@ export default function App() {
           </div>
 
           <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden print:border print:border-slate-300 print:rounded-xl print:shadow-none print:overflow-visible">
-            <div className="overflow-x-auto print:overflow-visible">
-              <table className="w-full text-left text-xs whitespace-nowrap print:text-[8.5px] print:w-full">
+            <div className="overflow-x-auto lg:overflow-x-visible print:overflow-visible">
+              <table className="w-full text-left text-xs whitespace-nowrap lg:whitespace-normal print:text-[8.5px] print:w-full">
                 <thead className="bg-slate-100/60 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-semibold print:bg-slate-100 print:text-[8px] print:border-b print:border-slate-300">
                   <tr>
-                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 font-semibold text-slate-700 print:text-slate-900">Cliente</th>
-                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 font-semibold text-slate-700 print:text-slate-900">Carro</th>
+                    <th className="px-2 py-3 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 font-semibold text-slate-700 print:text-slate-900">Cliente</th>
+                    <th className="px-2 py-3 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 font-semibold text-slate-700 print:text-slate-900">Carro</th>
 
-                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
+                    <th className="px-2 py-2 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">VN (R$)</span>
-                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
+                        <span className="inline-flex items-center mt-0.5 print:mt-0 px-1.5 py-0.5 print:p-0 rounded-full text-[9.5px] xl:text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
                           Tot: {formatBRL(metrics.vnBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
+                    <th className="px-2 py-2 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Margem (R$)</span>
-                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
+                        <span className="inline-flex items-center mt-0.5 print:mt-0 px-1.5 py-0.5 print:p-0 rounded-full text-[9.5px] xl:text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
                           Tot: {formatBRL(metrics.marginBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
+                    <th className="px-2 py-2 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">F&I (R$)</span>
-                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
+                        <span className="inline-flex items-center mt-0.5 print:mt-0 px-1.5 py-0.5 print:p-0 rounded-full text-[9.5px] xl:text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
                           Tot: {formatBRL(metrics.fAndIBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-center font-semibold text-slate-700 print:text-slate-900">Retorno F&I</th>
+                    <th className="px-2 py-3 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-center font-semibold text-slate-700 print:text-slate-900">Retorno</th>
                     
-                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
+                    <th className="px-2 py-2 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Valor SPF</span>
-                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700">
+                        <span className="inline-flex items-center mt-0.5 print:mt-0 px-1.5 py-0.5 print:p-0 rounded-full text-[9.5px] xl:text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700">
                           Penetr: {formatPercent(metrics.spfPenetration)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
+                    <th className="px-2 py-2 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Acessórios</span>
-                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700">
+                        <span className="inline-flex items-center mt-0.5 print:mt-0 px-1.5 py-0.5 print:p-0 rounded-full text-[9.5px] xl:text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700">
                           T.M: {formatBRL(metrics.accTicketHeader)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2 print:px-1.5 print:py-1 text-right">
+                    <th className="px-2 py-2 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Autobox</span>
-                        <span className="inline-flex items-center mt-1 print:mt-0 px-2 py-0.5 print:p-0 rounded-full text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
+                        <span className="inline-flex items-center mt-0.5 print:mt-0 px-1.5 py-0.5 print:p-0 rounded-full text-[9.5px] xl:text-[10px] print:text-[8px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80 print:bg-transparent print:border-none print:text-slate-700 font-mono tracking-tight">
                           Tot: {formatBRL(metrics.autoboxBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Emplac. (R$)</th>
-                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Seguro (R$)</th>
-                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Bônus (R$)</th>
-                    <th className="px-3 py-3.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Usados C. (R$)</th>
-                    <th className="px-3 py-3.5 text-center font-semibold text-slate-700 print:hidden">Ações</th>
+                    <th className="px-2 py-3 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Emplac.</th>
+                    <th className="px-2 py-3 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Seguro</th>
+                    <th className="px-2 py-3 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Bônus</th>
+                    <th className="px-2 py-3 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-right font-semibold text-slate-700 print:text-slate-900">Usados C.</th>
+                    <th className="px-1 py-3 text-center font-semibold text-slate-700 print:hidden w-8">Ações</th>
                   </tr>
                 </thead>
 
@@ -1530,55 +1484,55 @@ export default function App() {
                         key={sale.id} 
                         className="hover:bg-slate-50/70 transition-colors duration-150 group print:hover:bg-transparent print:border-b print:border-slate-200"
                       >
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <input 
                             type="text" 
                             value={sale.client} 
                             onChange={(e) => handleSaleChange(sale.id, 'client', e.target.value)}
                             placeholder={`Cliente ${index + 1}`}
-                            className="w-32 min-w-[130px] print:w-full print:min-w-0 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[8.5px] print:text-slate-900 print:truncate print:h-auto"
+                            className="w-28 min-w-[110px] lg:w-full lg:min-w-0 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[8.5px] print:text-slate-900 print:truncate print:h-auto"
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <input 
                             type="text" 
                             value={sale.car} 
                             onChange={(e) => handleSaleChange(sale.id, 'car', e.target.value)}
                             placeholder="Modelo"
-                            className="w-32 min-w-[130px] print:w-full print:min-w-0 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[8.5px] print:text-slate-900 print:truncate print:h-auto"
+                            className="w-28 min-w-[110px] lg:w-full lg:min-w-0 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[8.5px] print:text-slate-900 print:truncate print:h-auto"
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.vn} 
                             onChange={(v) => handleSaleChange(sale.id, 'vn', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.margin} 
                             onChange={(v) => handleSaleChange(sale.id, 'margin', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.fAndI} 
                             onChange={(v) => handleSaleChange(sale.id, 'fAndI', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1 text-center">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1 text-center">
                           <select 
                             value={sale.returnFAndI} 
                             onChange={(e) => handleSaleChange(sale.id, 'returnFAndI', e.target.value)}
-                            className="bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-2 py-1.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all cursor-pointer print:bg-transparent print:border-none print:appearance-none print:p-0 print:text-[8.5px] print:text-center print:text-slate-900"
+                            className="w-16 min-w-[70px] lg:w-full lg:min-w-0 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs lg:text-[11px] xl:text-xs font-semibold rounded-lg px-1 py-1.5 text-center focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all cursor-pointer print:bg-transparent print:border-none print:appearance-none print:p-0 print:text-[8.5px] print:text-center print:text-slate-900"
                           >
                             <option value="R0">R0 (0%)</option>
                             <option value="R1">R1 (1,2%)</option>
@@ -1588,63 +1542,63 @@ export default function App() {
                           </select>
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.spf} 
                             onChange={(v) => handleSaleChange(sale.id, 'spf', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.accessories} 
                             onChange={(v) => handleSaleChange(sale.id, 'accessories', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.autobox} 
                             onChange={(v) => handleSaleChange(sale.id, 'autobox', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.emplacamento} 
                             onChange={(v) => handleSaleChange(sale.id, 'emplacamento', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.seguro} 
                             onChange={(v) => handleSaleChange(sale.id, 'seguro', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.bonusCarro} 
                             onChange={(v) => handleSaleChange(sale.id, 'bonusCarro', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1.5 print:py-1">
+                        <td className="px-1.5 py-1.5 lg:px-1 xl:px-1.5 print:px-1.5 print:py-1">
                           <CurrencyInput 
-                            className="w-24 min-w-[105px] print:w-full print:min-w-0 text-right" 
+                            className="w-20 min-w-[90px] lg:w-full lg:min-w-0 text-right text-xs lg:text-[11px] xl:text-xs" 
                             value={sale.usadosCaptados} 
                             onChange={(v) => handleSaleChange(sale.id, 'usadosCaptados', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 text-center print:hidden">
+                        <td className="px-1.5 py-1.5 text-center print:hidden">
                           <button 
                             type="button"
                             onClick={() => handleRemoveSale(sale.id)}
@@ -1678,7 +1632,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* 5. Screen Lançamentos Extras Form (Hidden on Print) */}
         <section className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 sm:p-8 space-y-4 print:hidden">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
@@ -1737,7 +1690,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* 6. Screen BI Analytics Charts (Hidden on Print - Rendered on Page 2 in Print) */}
         <section className="space-y-4 print:hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div>
@@ -1862,7 +1814,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Gráfico 2: Composição da Comissão Bruta (Screen) */}
+            {/* Gráfico 2: Composição da Comissão Bruta (Donut 250x250 e legenda com gap reduzido) */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
@@ -1883,7 +1835,7 @@ export default function App() {
                 </span>
               </div>
 
-              <div className="pt-5 pb-3 flex-1 flex flex-col md:flex-row items-center justify-center gap-6">
+              <div className="pt-4 pb-2 flex-1 flex flex-col md:flex-row items-center justify-center md:justify-start gap-4 sm:gap-5">
                 {grossCommissionSlices.length === 0 ? (
                   <div className="h-56 flex flex-col items-center justify-center text-slate-400 text-xs w-full">
                     <Calculator size={28} className="mb-2 text-slate-300" />
@@ -1891,8 +1843,8 @@ export default function App() {
                   </div>
                 ) : (
                   <>
-                    <div className="relative w-[220px] h-[220px] shrink-0 flex items-center justify-center">
-                      <svg width="220" height="220" viewBox="0 0 220 220" className="overflow-visible">
+                    <div className="relative w-[250px] h-[250px] shrink-0 flex items-center justify-center">
+                      <svg width="250" height="250" viewBox="0 0 250 250" className="overflow-visible">
                         <defs>
                           <filter id="donutGlow" x="-20%" y="-20%" width="140%" height="140%">
                             <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
@@ -1908,7 +1860,7 @@ export default function App() {
                               fill={slice.color}
                               className="transition-all duration-200 cursor-pointer"
                               style={{
-                                transformOrigin: '110px 110px',
+                                transformOrigin: '125px 125px',
                                 transform: isHovered ? 'scale(1.04)' : 'scale(1)',
                                 filter: isHovered ? 'url(#donutGlow)' : 'none',
                                 opacity: activeDonutSlice !== null && !isHovered ? 0.45 : 1
@@ -1920,14 +1872,14 @@ export default function App() {
                         })}
                       </svg>
 
-                      <div className="absolute inset-0 m-auto w-[106px] h-[106px] rounded-full bg-white/95 backdrop-blur-sm border border-slate-100 shadow-xs flex flex-col items-center justify-center text-center p-2 pointer-events-none">
+                      <div className="absolute inset-0 m-auto w-[124px] h-[124px] rounded-full bg-white/95 backdrop-blur-sm border border-slate-100 shadow-xs flex flex-col items-center justify-center text-center p-2.5 pointer-events-none">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">
                           Total Bruto
                         </span>
-                        <span className="text-xs font-extrabold text-slate-900 tracking-tight mt-1 truncate max-w-[95px]">
+                        <span className="text-xs font-extrabold text-slate-900 tracking-tight mt-1 truncate max-w-[110px]">
                           {formatBRL(metrics.grossCommission)}
                         </span>
-                        <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full mt-1 border border-emerald-100">
+                        <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1 border border-emerald-100">
                           100% Ativo
                         </span>
                       </div>
@@ -1953,7 +1905,7 @@ export default function App() {
                       )}
                     </div>
 
-                    <div className="flex-1 w-full max-h-[220px] overflow-y-auto pr-1 space-y-1.5 text-xs">
+                    <div className="flex-1 w-full max-w-[340px] max-h-[250px] overflow-y-auto pr-1 space-y-1.5 text-xs">
                       {grossCommissionSlices.map((slice, index) => {
                         const isHovered = activeDonutSlice === index;
                         return (
@@ -1961,26 +1913,26 @@ export default function App() {
                             key={slice.id}
                             onMouseEnter={() => setActiveDonutSlice(index)}
                             onMouseLeave={() => setActiveDonutSlice(null)}
-                            className={`flex items-center justify-between p-1.5 px-2.5 rounded-lg border transition-all cursor-pointer ${
+                            className={`flex items-center justify-between gap-3 p-1.5 px-2.5 rounded-lg border transition-all cursor-pointer ${
                               isHovered 
                                 ? 'bg-slate-50 border-slate-300 shadow-xs' 
                                 : 'bg-transparent border-transparent hover:bg-slate-50/60'
                             }`}
                           >
-                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                            <div className="flex items-center gap-2 min-w-0">
                               <span 
                                 className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" 
                                 style={{ backgroundColor: slice.color }} 
                               />
-                              <span className="font-medium text-slate-700 truncate text-[11px]">
-                                {slice.label}
+                              <span className="font-semibold text-slate-700 text-xs whitespace-nowrap">
+                                {slice.shortLabel || slice.label}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="font-semibold text-slate-900 text-[11px]">
+                            <div className="flex items-center gap-2 shrink-0 ml-auto">
+                              <span className="font-semibold text-slate-900 text-xs tabular-nums">
                                 {formatBRL(slice.value)}
                               </span>
-                              <span className="text-[10px] font-bold text-slate-500 w-10 text-right">
+                              <span className="text-[11px] font-bold text-slate-500 w-10 text-right tabular-nums">
                                 {slice.percent.toFixed(1).replace('.', ',')}%
                               </span>
                             </div>
@@ -2002,12 +1954,8 @@ export default function App() {
           </div>
         </section>
 
-        {/* =========================================================================
-            PÁGINA 2 DA IMPRESSÃO (AUDITORIA, MEMÓRIA DE CÁLCULO & ANALYTICS BI)
-           ========================================================================= */}
         <div className="hidden print:block print-page-break print:break-before-page pt-3">
           
-          {/* 2.1 Print Header for Page 2 */}
           <div className="flex items-center justify-between border-b border-slate-300 pb-2 mb-3 text-slate-900 print-avoid-break">
             <div className="flex items-baseline gap-2.5">
               <h2 className="text-base font-black tracking-tight text-slate-900 leading-none">
@@ -2023,7 +1971,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* 2.2 Memória de Cálculo Completa Estática (Auditoria dos 10 Itens) */}
           <div className="border border-slate-200 rounded-2xl bg-white p-4 mb-4 print-avoid-break">
             <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2 text-slate-900">
               <div className="flex items-center gap-2">
@@ -2042,7 +1989,6 @@ export default function App() {
             <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-3 text-[9.5px]">
               <div className="grid grid-cols-2 gap-x-6">
                 
-                {/* Coluna Esquerda: Itens 1 a 5 */}
                 <div className="space-y-1.5 divide-y divide-slate-100">
                   <div className="flex items-center justify-between pt-1">
                     <div>
@@ -2085,7 +2031,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Coluna Direita: Itens 6 a 10 */}
                 <div className="space-y-1.5 divide-y divide-slate-100">
                   <div className="flex items-center justify-between pt-1">
                     <div>
@@ -2129,7 +2074,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Card de Fechamento Consolidado no Print */}
               <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5 px-3 flex justify-between items-center mt-2.5">
                 <div>
                   <span className="text-[10px] font-bold text-sky-950 block">Total Geral Bruto Apurado</span>
@@ -2142,10 +2086,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* 2.3 Os Dois Gráficos Analíticos de BI no Print (Lado a Lado) */}
           <div className="grid grid-cols-2 gap-4 print-avoid-break">
             
-            {/* Gráfico 1 Print: Volume por Modelo */}
             <div className="border border-slate-200 rounded-2xl p-3.5 bg-white">
               <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2">
                 <div className="flex items-center gap-1.5">
@@ -2200,7 +2142,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Gráfico 2 Print: Composição da Comissão Bruta (Donut) */}
             <div className="border border-slate-200 rounded-2xl p-3.5 bg-white">
               <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2">
                 <div className="flex items-center gap-1.5">
@@ -2224,7 +2165,7 @@ export default function App() {
                 ) : (
                   <>
                     <div className="relative w-[120px] h-[120px] shrink-0 flex items-center justify-center">
-                      <svg width="120" height="120" viewBox="0 0 220 220" className="overflow-visible">
+                      <svg width="120" height="120" viewBox="0 0 250 250" className="overflow-visible">
                         {donutGeometry.map((slice) => (
                           <path
                             key={slice.id}
@@ -2246,7 +2187,7 @@ export default function App() {
                         <div key={slice.id} className="flex items-center justify-between py-0.5 px-1 border-b border-slate-50 last:border-none">
                           <div className="flex items-center gap-1.5 min-w-0 pr-1">
                             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
-                            <span className="font-medium text-slate-700 truncate">{slice.label}</span>
+                            <span className="font-medium text-slate-700 truncate">{slice.shortLabel || slice.label}</span>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <span className="font-bold text-slate-900">{formatBRL(slice.value)}</span>
@@ -2284,9 +2225,9 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Top Header (Screen only) */}
+      {/* Main Top Header: Clean, modern, without sync indicator */}
       <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-sm print:hidden">
-        <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-row justify-between items-center gap-4">
           
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentScreen('HUB')}>
             <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
@@ -2307,42 +2248,12 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            {renderSyncBadge()}
-
-            <input 
-              type="file" 
-              accept=".json" 
-              ref={fileInputRef} 
-              onChange={importData} 
-              className="hidden" 
-            />
-            
-            <button 
-              type="button"
-              onClick={() => fileInputRef.current?.click()} 
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-slate-700 bg-white hover:bg-slate-50 border border-slate-200/90 text-xs font-semibold px-3 py-2 rounded-xl transition-colors duration-150 shadow-sm cursor-pointer"
-              title="Restaurar dados de backup"
-            >
-              <Upload size={14} className="text-slate-500" />
-              <span>Restaurar</span>
-            </button>
-
-            <button 
-              type="button"
-              onClick={exportData} 
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-slate-700 bg-white hover:bg-slate-50 border border-slate-200/90 text-xs font-semibold px-3 py-2 rounded-xl transition-colors duration-150 shadow-sm cursor-pointer"
-              title="Salvar backup em arquivo JSON"
-            >
-              <Download size={14} className="text-slate-500" />
-              <span>Backup</span>
-            </button>
-
+          <div className="flex items-center gap-3">
             {currentScreen === 'DETAIL' && (
               <button 
                 type="button"
                 onClick={() => window.print()} 
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
                 title="Imprimir ou salvar em PDF"
               >
                 <Printer size={14} />
@@ -2449,6 +2360,97 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL: Editar Competência */}
+      {isEditMonthOpen && monthToEdit && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={(e) => { if (e.target === e.currentTarget) setIsEditMonthOpen(false); }}
+        >
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                  <Pencil size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Editar Competência</h3>
+                  <p className="text-xs text-slate-500">Altere o período ou a meta da competência</p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsEditMonthOpen(false)}
+                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateMonth} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Mês de Competência
+                </label>
+                <select
+                  value={editMonthForm.mes}
+                  onChange={(e) => setEditMonthForm(prev => ({ ...prev, mes: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                >
+                  {MONTH_NAMES.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Ano
+                </label>
+                <input 
+                  type="number"
+                  value={editMonthForm.ano}
+                  onChange={(e) => setEditMonthForm(prev => ({ ...prev, ano: e.target.value }))}
+                  min="2020"
+                  max="2035"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Meta de Vendas (Quantidade de Veículos)
+                </label>
+                <input 
+                  type="number"
+                  value={editMonthForm.meta}
+                  onChange={(e) => setEditMonthForm(prev => ({ ...prev, meta: e.target.value }))}
+                  min="1"
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                  required
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsEditMonthOpen(false)}
+                  className="text-slate-500 hover:text-slate-800 font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: Confirmação de Exclusão de Mês */}
       {monthToDelete && (
         <div 
@@ -2487,7 +2489,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: Memória de Cálculo da Comissão Bruta (Screen Popover) */}
+      {/* MODAL: Memória de Cálculo da Comissão Bruta */}
       {showCalculationModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2862,7 +2864,6 @@ export default function App() {
         </div>
       )}
 
-      {}
       <style>{`
         @media print {
           @page {
