@@ -1047,7 +1047,7 @@ export default function App() {
     return (
       <div className="space-y-8 print:space-y-0 animate-in fade-in duration-200">
         
-        {/* Navigation Bar for Selected Month (Cleaned, without cloud badge) */}
+        {/* Navigation Bar for Selected Month */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 px-6 shadow-sm print:hidden">
           <div className="flex items-center gap-3">
             <button
@@ -1098,7 +1098,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* 1.2 Os 4 Cards Executivos Oficiais no Print */}
         <div className="hidden print:grid print:grid-cols-4 print:gap-4 print:mb-3 print-avoid-break">
           
           <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
@@ -1814,7 +1813,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Gráfico 2: Composição da Comissão Bruta (Donut 250x250 e legenda com gap reduzido) */}
+            {/* Gráfico 2: Composição da Comissão Bruta (Donut 250x250 e legenda ajustada sem colisões) */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
@@ -1835,7 +1834,7 @@ export default function App() {
                 </span>
               </div>
 
-              <div className="pt-4 pb-2 flex-1 flex flex-col md:flex-row items-center justify-center md:justify-start gap-4 sm:gap-5">
+              <div className="pt-4 pb-2 flex-1 flex flex-col md:flex-row items-center justify-center md:justify-start gap-4 sm:gap-6">
                 {grossCommissionSlices.length === 0 ? (
                   <div className="h-56 flex flex-col items-center justify-center text-slate-400 text-xs w-full">
                     <Calculator size={28} className="mb-2 text-slate-300" />
@@ -1905,7 +1904,7 @@ export default function App() {
                       )}
                     </div>
 
-                    <div className="flex-1 w-full max-w-[340px] max-h-[250px] overflow-y-auto pr-1 space-y-1.5 text-xs">
+                    <div className="flex-1 w-full max-w-[420px] max-h-[300px] overflow-y-auto pr-1 space-y-1 text-xs">
                       {grossCommissionSlices.map((slice, index) => {
                         const isHovered = activeDonutSlice === index;
                         return (
@@ -1913,26 +1912,26 @@ export default function App() {
                             key={slice.id}
                             onMouseEnter={() => setActiveDonutSlice(index)}
                             onMouseLeave={() => setActiveDonutSlice(null)}
-                            className={`flex items-center justify-between gap-3 p-1.5 px-2.5 rounded-lg border transition-all cursor-pointer ${
+                            className={`flex items-center justify-between gap-3 p-2 px-3 rounded-xl min-h-[38px] border transition-all cursor-pointer ${
                               isHovered 
-                                ? 'bg-slate-50 border-slate-300 shadow-xs' 
-                                : 'bg-transparent border-transparent hover:bg-slate-50/60'
+                                ? 'bg-slate-50/90 border-slate-300 shadow-xs' 
+                                : 'bg-transparent border-transparent hover:bg-slate-50/80'
                             }`}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-2.5 min-w-0">
                               <span 
-                                className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" 
+                                className="w-3 h-3 rounded-full shrink-0 shadow-xs" 
                                 style={{ backgroundColor: slice.color }} 
                               />
-                              <span className="font-semibold text-slate-700 text-xs whitespace-nowrap">
+                              <span className="text-xs font-semibold text-slate-700 truncate">
                                 {slice.shortLabel || slice.label}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0 ml-auto">
-                              <span className="font-semibold text-slate-900 text-xs tabular-nums">
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-xs font-bold text-slate-900 font-mono">
                                 {formatBRL(slice.value)}
                               </span>
-                              <span className="text-[11px] font-bold text-slate-500 w-10 text-right tabular-nums">
+                              <span className="text-[11px] font-semibold text-slate-500 w-12 text-right">
                                 {slice.percent.toFixed(1).replace('.', ',')}%
                               </span>
                             </div>
@@ -2225,9 +2224,9 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Top Header: Clean, modern, without sync indicator */}
+      {/* Main Top Header: Expanded to max-w-[1720px] for widescreen desktops */}
       <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-sm print:hidden">
-        <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-row justify-between items-center gap-4">
+        <div className="max-w-[1720px] mx-auto px-6 sm:px-8 py-4 flex flex-row justify-between items-center gap-4">
           
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentScreen('HUB')}>
             <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
@@ -2264,12 +2263,11 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-[1440px] mx-auto px-6 pt-8 print:px-0 print:pt-0 print:max-w-none print:m-0 print:w-full">
+      {/* Main Container: Expanded to max-w-[1720px] for desktop comfort */}
+      <main className="max-w-[1720px] mx-auto px-6 sm:px-8 pt-8 print:px-0 print:pt-0 print:max-w-none print:m-0 print:w-full">
         {currentScreen === 'HUB' ? renderHubScreen() : renderDetailScreen()}
       </main>
 
-      {/* MODAL: Criar Novo Mês */}
       {isCreateMonthOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2360,7 +2358,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: Editar Competência */}
       {isEditMonthOpen && monthToEdit && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2451,7 +2448,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: Confirmação de Exclusão de Mês */}
       {monthToDelete && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2489,7 +2485,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: Memória de Cálculo da Comissão Bruta */}
       {showCalculationModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2620,7 +2615,6 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: Adicionar Nova Venda */}
       {isAddModalOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
