@@ -635,10 +635,10 @@ export default function App() {
     if (total <= 0) return [];
 
     let accumulatedAngle = 0;
-    const cx = 160;
-    const cy = 160;
-    const outerR = 135;
-    const innerR = 92;
+    const cx = 130;
+    const cy = 130;
+    const outerR = 115;
+    const innerR = 78;
 
     return grossCommissionSlices.map((slice, index) => {
       const sweep = (slice.value / total) * 360;
@@ -650,7 +650,7 @@ export default function App() {
       const effectiveStart = startAngle + gap / 2;
       const effectiveEnd = endAngle - gap / 2;
 
-      const toRad = (deg) => ((deg - 90) * Math.PI) / 180.0;
+      const toRad = (deg) => (deg * Math.PI) / 180.0;
       const x1 = cx + outerR * Math.cos(toRad(effectiveStart));
       const y1 = cy + outerR * Math.sin(toRad(effectiveStart));
       const x2 = cx + outerR * Math.cos(toRad(effectiveEnd));
@@ -1823,7 +1823,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Chart 2: Composição da Comissão Bruta (Donut Expandido 320x320 + Legenda Compacta) */}
+            {/* Chart 2: Composição da Comissão Bruta (Donut 260x260 + Grid 12 colunas) */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
@@ -1844,18 +1844,19 @@ export default function App() {
                 </span>
               </div>
 
-              <div className="pt-4 pb-2 flex-1 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+              <div className="pt-4 pb-2 flex-1">
                 {grossCommissionSlices.length === 0 ? (
                   <div className="h-56 flex flex-col items-center justify-center text-slate-400 text-xs w-full">
                     <Calculator size={28} className="mb-2 text-slate-300" />
                     <span>Nenhuma comissão apurada para compor o gráfico.</span>
                   </div>
                 ) : (
-                  <>
-                    {/* Container do Gráfico Donut Expandido */}
-                    <div className="flex-1 flex items-center justify-center min-w-0 p-2">
-                      <div className="relative w-full max-w-[320px] aspect-square shrink-0 flex items-center justify-center">
-                        <svg width="100%" height="100%" viewBox="0 0 320 320" className="overflow-visible">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-3">
+                    {/* COLUNA ESQUERDA: GRÁFICO DONUT (5 colunas) */}
+                    <div className="lg:col-span-5 flex items-center justify-center">
+                      {/* Container relativo travado onde o miolo fica preso EXCLUSIVAMENTE dentro do SVG */}
+                      <div className="relative w-[260px] h-[260px] flex items-center justify-center shrink-0">
+                        <svg width="260" height="260" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
                           <defs>
                             <filter id="donutGlow" x="-20%" y="-20%" width="140%" height="140%">
                               <feDropShadow dx="0" dy="4" stdDeviation="5" floodOpacity="0.18" />
@@ -1871,8 +1872,8 @@ export default function App() {
                                 fill={slice.color}
                                 className="transition-all duration-200 cursor-pointer"
                                 style={{
-                                  transformOrigin: '160px 160px',
-                                  transform: isHovered ? 'scale(1.03)' : 'scale(1)',
+                                  transformOrigin: '130px 130px',
+                                  transform: isHovered ? 'scale(1.04)' : 'scale(1)',
                                   filter: isHovered ? 'url(#donutGlow)' : 'none',
                                   opacity: activeDonutSlice !== null && !isHovered ? 0.45 : 1
                                 }}
@@ -1883,17 +1884,11 @@ export default function App() {
                           })}
                         </svg>
 
-                        {/* Miolo Central Branco Ampliado */}
-                        <div className="absolute inset-0 m-auto w-[170px] h-[170px] rounded-full bg-white/95 backdrop-blur-sm border border-slate-100 shadow-xs flex flex-col items-center justify-center text-center p-3 pointer-events-none">
-                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider leading-none">
-                            Total Bruto
-                          </span>
-                          <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-1.5 truncate max-w-[150px]">
-                            {formatBRL(metrics.grossCommission)}
-                          </span>
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full mt-1.5 border border-emerald-200 inline-block">
-                            100% Ativo
-                          </span>
+                        {/* Miolo central preso EXCLUSIVAMENTE dentro do círculo do gráfico */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">TOTAL BRUTO</span>
+                          <span className="text-lg font-black text-slate-900 tracking-tight">{formatBRL(metrics.grossCommission)}</span>
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 mt-1">100% Ativo</span>
                         </div>
 
                         {activeDonutSlice !== null && donutGeometry[activeDonutSlice] && (
@@ -1918,35 +1913,32 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Lista Lateral de Legendas Compacta */}
-                    <div className="w-full md:w-auto md:min-w-[270px] md:max-w-[310px] shrink-0 min-h-[380px] max-h-[520px] overflow-y-auto pr-1.5 space-y-1 text-xs">
-                      {grossCommissionSlices.map((slice, index) => {
+                    {/* COLUNA DIREITA: LISTA DE FONTES DE RECEITA (7 colunas) */}
+                    <div className="lg:col-span-7 flex flex-col justify-center space-y-1.5 min-w-0">
+                      {grossCommissionSlices.filter(s => s.value > 0).map((slice, index) => {
                         const isHovered = activeDonutSlice === index;
                         return (
                           <div
                             key={slice.id}
                             onMouseEnter={() => setActiveDonutSlice(index)}
                             onMouseLeave={() => setActiveDonutSlice(null)}
-                            className={`flex items-center justify-between gap-3 py-1.5 px-2.5 rounded-lg border transition-colors cursor-pointer ${
+                            className={`flex items-center justify-between gap-3 py-1.5 px-3 rounded-lg border transition-colors cursor-pointer ${
                               isHovered 
-                                ? 'bg-slate-50/90 border-slate-300 shadow-xs' 
-                                : 'bg-transparent border-transparent hover:bg-slate-50'
+                                ? 'bg-slate-50 border-slate-200/80 shadow-xs' 
+                                : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200/60'
                             }`}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span 
-                                className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" 
-                                style={{ backgroundColor: slice.color }} 
-                              />
-                              <span className="text-xs font-semibold text-slate-800 truncate" title={slice.label}>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                              <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
                                 {slice.shortLabel || slice.label}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2.5 shrink-0">
+                            <div className="flex items-center gap-3 shrink-0">
                               <span className="text-xs font-bold text-slate-900 font-mono">
                                 {formatBRL(slice.value)}
                               </span>
-                              <span className="text-[11px] font-semibold text-slate-500 w-11 text-right">
+                              <span className="text-[11px] font-semibold text-slate-500 w-12 text-right">
                                 {slice.percent.toFixed(1).replace('.', ',')}%
                               </span>
                             </div>
@@ -1954,7 +1946,7 @@ export default function App() {
                         );
                       })}
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
 
@@ -2181,8 +2173,8 @@ export default function App() {
                   </div>
                 ) : (
                   <>
-                    <div className="relative w-[120px] height-[120px] shrink-0 flex items-center justify-center">
-                      <svg width="120" height="120" viewBox="0 0 320 320" className="overflow-visible">
+                    <div className="relative w-[120px] h-[120px] shrink-0 flex items-center justify-center">
+                      <svg width="120" height="120" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
                         {donutGeometry.map((slice) => (
                           <path
                             key={slice.id}
@@ -2191,7 +2183,7 @@ export default function App() {
                           />
                         ))}
                       </svg>
-                      <div className="absolute inset-0 m-auto w-[62px] h-[62px] rounded-full bg-white border border-slate-200 flex flex-col items-center justify-center text-center p-0.5">
+                      <div className="absolute inset-0 m-auto w-[62px] h-[62px] rounded-full bg-white border border-slate-200 flex flex-col items-center justify-center text-center p-0.5 pointer-events-none">
                         <span className="text-[7px] font-bold text-slate-400 uppercase leading-none">Total</span>
                         <span className="text-[8px] font-black text-slate-900 truncate max-w-[56px] mt-0.5">
                           {formatBRL(metrics.grossCommission)}
@@ -2228,7 +2220,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 flex flex-col items-center justify-start p-2 sm:p-4 lg:p-6 text-slate-800 font-['Inter',sans-serif] antialiased selection:bg-sky-100 selection:text-sky-900 print:bg-white print:p-0 print:m-0 print:min-h-0">
+    <div className="min-h-screen w-full bg-slate-950 flex flex-col items-center justify-start p-2 sm:p-4 text-slate-800 font-['Inter',sans-serif] antialiased selection:bg-sky-100 selection:text-sky-900 print:bg-white print:p-0 print:m-0 print:min-h-0">
       
       {/* Toast Notification */}
       {toast && (
@@ -2243,7 +2235,10 @@ export default function App() {
       )}
 
       {/* Main Panoramical Card Container */}
-      <div className="w-full max-w-[96vw] 2xl:max-w-[1850px] mx-auto my-4 sm:my-6 rounded-3xl shadow-2xl bg-white overflow-hidden border border-slate-800/40 print:max-w-none print:m-0 print:p-0 print:border-none print:shadow-none print:rounded-none print:overflow-visible">
+      <div 
+        className="w-full mx-auto my-4 rounded-3xl shadow-2xl bg-white overflow-hidden border border-slate-200/80 print:w-full print:max-w-none print:m-0 print:p-0 print:border-none print:shadow-none print:rounded-none print:overflow-visible"
+        style={{ width: '96%', maxWidth: '1820px' }}
+      >
         
         {/* Main Top Header */}
         <header className="w-full px-6 sm:px-8 py-5 border-b border-slate-100 bg-white sticky top-0 z-30 flex items-center justify-between print:hidden">
