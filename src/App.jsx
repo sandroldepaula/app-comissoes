@@ -864,7 +864,7 @@ export default function App() {
 
   const renderHubScreen = () => {
     return (
-      <div className="space-y-8 animate-in fade-in duration-200">
+      <div className="w-full px-6 sm:px-8 py-8 space-y-8 animate-in fade-in duration-200">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-3xl p-6 md:p-8 shadow-sm">
           <div>
             <div className="flex items-center gap-2">
@@ -1045,32 +1045,34 @@ export default function App() {
     if (!activeMonth) return null;
 
     return (
-      <div className="space-y-8 print:space-y-0 animate-in fade-in duration-200">
+      <div className="w-full space-y-0 print:space-y-0 animate-in fade-in duration-200">
         
         {/* Navigation Bar for Selected Month */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 px-6 shadow-sm print:hidden">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setCurrentScreen('HUB')}
-              className="inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/70 font-semibold text-xs px-3.5 py-2 rounded-xl transition-all cursor-pointer"
-            >
-              <ArrowLeft size={15} />
-              <span>Voltar para Meses</span>
-            </button>
-            <div className="h-5 w-px bg-slate-200 hidden sm:block" />
-            <div>
-              <span className="text-xs text-slate-400 block font-medium">Competência Ativa</span>
-              <h2 className="text-base font-bold text-slate-900 tracking-tight">
-                {activeMonth.mes} / {activeMonth.ano}
-              </h2>
+        <div className="w-full px-6 sm:px-8 pt-6 print:hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 px-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setCurrentScreen('HUB')}
+                className="inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/70 font-semibold text-xs px-3.5 py-2 rounded-xl transition-all cursor-pointer"
+              >
+                <ArrowLeft size={15} />
+                <span>Voltar para Meses</span>
+              </button>
+              <div className="h-5 w-px bg-slate-200 hidden sm:block" />
+              <div>
+                <span className="text-xs text-slate-400 block font-medium">Competência Ativa</span>
+                <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                  {activeMonth.mes} / {activeMonth.ano}
+                </h2>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2 font-medium">
-              <Target size={14} className="text-sky-600" />
-              <span>Meta: <strong>{activeMonth.meta}</strong> veículos</span>
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2 font-medium">
+                <Target size={14} className="text-sky-600" />
+                <span>Meta: <strong>{activeMonth.meta}</strong> veículos</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1204,8 +1206,8 @@ export default function App() {
         </div>
 
         {/* Screen Dashboard Cards (Visão Geral do Mês) */}
-        <section className="space-y-3 print:hidden">
-          <div className="flex items-center justify-between">
+        <section className="w-full print:hidden">
+          <div className="w-full px-6 sm:px-8 pt-6 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
               Visão Geral do Mês
             </h2>
@@ -1215,7 +1217,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 px-6 sm:px-8 mt-4">
             <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200 relative overflow-hidden group">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-500">Volume Total & Faixa VN</span>
@@ -1332,8 +1334,8 @@ export default function App() {
         </section>
 
         {/* Screen Manual Extras Summary */}
-        <section className="space-y-3 print:hidden">
-          <div className="flex items-center justify-between">
+        <section className="w-full px-6 sm:px-8 mt-6 print:hidden">
+          <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Resumo de Prêmios Manuais
             </span>
@@ -1368,8 +1370,8 @@ export default function App() {
         </section>
 
         {/* Sales Table Section */}
-        <section className="space-y-3 print:space-y-0 print-avoid-break">
-          <div className="flex items-center justify-between print:hidden">
+        <section className="w-full px-6 sm:px-8 mt-6 print:px-0 print:mt-0 print:space-y-0 print-avoid-break">
+          <div className="flex items-center justify-between mb-3 print:hidden">
             <div>
               <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
                 Lançamento de Vendas
@@ -1385,8 +1387,8 @@ export default function App() {
           </div>
 
           <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden print:border print:border-slate-300 print:rounded-xl print:shadow-none print:overflow-visible">
-            <div className="overflow-x-auto print:overflow-visible">
-              <table className="w-full text-left text-xs whitespace-nowrap print:text-[8.5px] print:w-full">
+            <div className="w-full overflow-x-auto print:overflow-visible">
+              <table className="w-full min-w-full text-left text-xs whitespace-nowrap print:text-[8.5px]">
                 <thead className="bg-slate-100/60 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-semibold print:bg-slate-100 print:text-[8px] print:border-b print:border-slate-300">
                   <tr>
                     <th className="px-3 py-3 font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-1">Cliente</th>
@@ -1636,67 +1638,69 @@ export default function App() {
         </section>
 
         {/* Manual Extras Edit Form */}
-        <section className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 sm:p-8 space-y-4 print:hidden">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
-                Lançamentos Extras
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Prêmios manuais e bônus que somam diretamente à comissão bruta
-              </p>
-            </div>
-            <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-3 py-1 rounded-lg border border-sky-100">
-              Total: {formatBRL(metrics.extrasTotal)}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                Prêmio Usados Captados
-              </label>
-              <CurrencyInput 
-                value={activeExtras.premioUsados} 
-                onChange={(v) => handleUpdateActiveMonthExtras('premioUsados', v)} 
-              />
+        <section className="w-full px-6 sm:px-8 mt-6 print:hidden">
+          <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 sm:p-8 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
+                  Lançamentos Extras
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Prêmios manuais e bônus que somam diretamente à comissão bruta
+                </p>
+              </div>
+              <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-3 py-1 rounded-lg border border-sky-100">
+                Total: {formatBRL(metrics.extrasTotal)}
+              </span>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                Prêmio Águia
-              </label>
-              <CurrencyInput 
-                value={activeExtras.premioAguia} 
-                onChange={(v) => handleUpdateActiveMonthExtras('premioAguia', v)} 
-              />
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Prêmio Usados Captados
+                </label>
+                <CurrencyInput 
+                  value={activeExtras.premioUsados} 
+                  onChange={(v) => handleUpdateActiveMonthExtras('premioUsados', v)} 
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                Prêmio Líder
-              </label>
-              <CurrencyInput 
-                value={activeExtras.premioLider} 
-                onChange={(v) => handleUpdateActiveMonthExtras('premioLider', v)} 
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Prêmio Águia
+                </label>
+                <CurrencyInput 
+                  value={activeExtras.premioAguia} 
+                  onChange={(v) => handleUpdateActiveMonthExtras('premioAguia', v)} 
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                Prêmio NPS
-              </label>
-              <CurrencyInput 
-                value={activeExtras.premioNps} 
-                onChange={(v) => handleUpdateActiveMonthExtras('premioNps', v)} 
-              />
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Prêmio Líder
+                </label>
+                <CurrencyInput 
+                  value={activeExtras.premioLider} 
+                  onChange={(v) => handleUpdateActiveMonthExtras('premioLider', v)} 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Prêmio NPS
+                </label>
+                <CurrencyInput 
+                  value={activeExtras.premioNps} 
+                  onChange={(v) => handleUpdateActiveMonthExtras('premioNps', v)} 
+                />
+              </div>
             </div>
           </div>
         </section>
 
         {/* Analytics BI Section */}
-        <section className="space-y-4 print:hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+        <section className="w-full print:hidden">
+          <div className="w-full px-6 sm:px-8 pt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
@@ -1715,7 +1719,7 @@ export default function App() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 px-6 sm:px-8 mt-4 mb-12">
             {/* Chart 1: Volume por Modelo */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
@@ -2224,7 +2228,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-['Inter',sans-serif] antialiased selection:bg-sky-100 selection:text-sky-900 pb-24 print:bg-white print:p-0 print:pb-0 print:min-h-0">
+    <div className="min-h-screen w-full bg-slate-950 flex flex-col items-center justify-start p-2 sm:p-4 lg:p-6 text-slate-800 font-['Inter',sans-serif] antialiased selection:bg-sky-100 selection:text-sky-900 print:bg-white print:p-0 print:m-0 print:min-h-0">
       
       {/* Toast Notification */}
       {toast && (
@@ -2238,10 +2242,11 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Top Header */}
-      <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-sm print:hidden">
-        <div className="w-full max-w-[1850px] mx-auto px-4 sm:px-8 py-4 flex flex-row justify-between items-center gap-4">
-          
+      {/* Main Panoramical Card Container */}
+      <div className="w-full max-w-[96vw] 2xl:max-w-[1850px] mx-auto my-4 sm:my-6 rounded-3xl shadow-2xl bg-white overflow-hidden border border-slate-800/40 print:max-w-none print:m-0 print:p-0 print:border-none print:shadow-none print:rounded-none print:overflow-visible">
+        
+        {/* Main Top Header */}
+        <header className="w-full px-6 sm:px-8 py-5 border-b border-slate-100 bg-white sticky top-0 z-30 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentScreen('HUB')}>
             <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
               <Car size={22} strokeWidth={2.2} />
@@ -2274,13 +2279,13 @@ export default function App() {
               </button>
             )}
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Container */}
-      <main className="w-full max-w-[1850px] mx-auto px-4 sm:px-8 pt-6 pb-16 print:px-0 print:pt-0 print:max-w-none print:m-0 print:w-full">
-        {currentScreen === 'HUB' ? renderHubScreen() : renderDetailScreen()}
-      </main>
+        {/* Main Operational Flow */}
+        <main className="w-full pb-12 print:pb-0 print:p-0">
+          {currentScreen === 'HUB' ? renderHubScreen() : renderDetailScreen()}
+        </main>
+      </div>
 
       {/* Modal: Criar Novo Mês */}
       {isCreateMonthOpen && (
