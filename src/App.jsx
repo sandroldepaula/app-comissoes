@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
   Car, 
   Printer, 
@@ -83,46 +83,104 @@ const getErrorMessage = async (res) => {
   }
 };
 
-const getRequestHeaders = (token) => ({
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': token ? `Bearer ${token}` : `Bearer ${SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json'
-});
+const createRestClient = (sessionRef, refreshSessionToken, onLogout) => {
+  const executeSecureRequest = async (table, queryOrPath, method, body, extraHeaders = {}) => {
+    let currentToken = sessionRef.current?.access_token;
+    
+    // Strict block: never allow anonymous requests to private data tables
+    if (!currentToken) {
+      throw new Error('Acesso bloqueado: sessão não autenticada.');
+    }
 
-const createRestClient = (token) => ({
-  from: (table) => ({
-    select: async (cols = '*', queryParams = '') => {
+    const buildHeaders = (token) => ({
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...extraHeaders
+    });
+
+    const url = `${SUPABASE_URL}/rest/v1/${table}${queryOrPath || ''}`;
+    let res = await fetch(url, {
+      method,
+      headers: buildHeaders(currentToken),
+      body: body ? JSON.stringify(body) : undefined
+    });
+
+    // Intercept 401 Unauthorized or expired tokens to auto-refresh session
+    if (res.status === 401) {
       try {
-        const url = queryParams 
-          ? `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(cols)}&${queryParams}`
-          : `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(cols)}`;
-        const res = await fetch(url, {
-          method: 'GET',
-          headers: getRequestHeaders(token)
-        });
-        if (!res.ok) {
-          const msg = await getErrorMessage(res);
-          return { data: null, error: new Error(msg) };
+        const refreshedSession = await refreshSessionToken();
+        if (refreshedSession?.access_token) {
+          currentToken = refreshedSession.access_token;
+          res = await fetch(url, {
+            method,
+            headers: buildHeaders(currentToken),
+            body: body ? JSON.stringify(body) : undefined
+          });
+        } else {
+          onLogout();
+          throw new Error('Sessão expirada. Faça login novamente.');
         }
-        const data = await res.json();
-        return { data, error: null };
       } catch (err) {
-        return { data: null, error: err };
+        onLogout();
+        throw err;
       }
-    },
-    delete: () => ({
-      match: async (filtersObj) => {
+    }
+
+    return res;
+  };
+
+  return {
+    from: (table) => ({
+      select: async (cols = '*', queryParams = '') => {
         try {
-          const params = Object.entries(filtersObj)
-            .map(([k, v]) => `${encodeURIComponent(k)}=eq.${encodeURIComponent(v)}`)
-            .join('&');
-          const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/${table}?${params}`,
-            {
-              method: 'DELETE',
-              headers: getRequestHeaders(token)
+          const q = queryParams 
+            ? `select=${encodeURIComponent(cols)}&${queryParams}`
+            : `select=${encodeURIComponent(cols)}`;
+          const res = await executeSecureRequest(table, `?${q}`, 'GET');
+          if (!res.ok) {
+            const msg = await getErrorMessage(res);
+            return { data: null, error: new Error(msg) };
+          }
+          const data = await res.json();
+          return { data, error: null };
+        } catch (err) {
+          return { data: null, error: err };
+        }
+      },
+      delete: () => ({
+        match: async (filtersObj) => {
+          try {
+            const params = Object.entries(filtersObj)
+              .map(([k, v]) => `${encodeURIComponent(k)}=eq.${encodeURIComponent(v)}`)
+              .join('&');
+            const res = await executeSecureRequest(table, `?${params}`, 'DELETE');
+            if (!res.ok) {
+              const msg = await getErrorMessage(res);
+              return { error: new Error(msg) };
             }
-          );
+            return { error: null };
+          } catch (err) {
+            return { error: err };
+          }
+        },
+        eq: async (column, value) => {
+          try {
+            const res = await executeSecureRequest(table, `?${encodeURIComponent(column)}=eq.${encodeURIComponent(value)}`, 'DELETE');
+            if (!res.ok) {
+              const msg = await getErrorMessage(res);
+              return { error: new Error(msg) };
+            }
+            return { error: null };
+          } catch (err) {
+            return { error: err };
+          }
+        }
+      }),
+      insert: async (payload) => {
+        try {
+          const body = Array.isArray(payload) ? payload : [payload];
+          const res = await executeSecureRequest(table, '', 'POST', body, { 'Prefer': 'return=minimal' });
           if (!res.ok) {
             const msg = await getErrorMessage(res);
             return { error: new Error(msg) };
@@ -132,15 +190,13 @@ const createRestClient = (token) => ({
           return { error: err };
         }
       },
-      eq: async (column, value) => {
+      upsert: async (payload, options = {}) => {
         try {
-          const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/${table}?${encodeURIComponent(column)}=eq.${encodeURIComponent(value)}`,
-            {
-              method: 'DELETE',
-              headers: getRequestHeaders(token)
-            }
-          );
+          const body = Array.isArray(payload) ? payload : [payload];
+          const onConflictParam = options?.onConflict ? `?on_conflict=${encodeURIComponent(options.onConflict)}` : '';
+          const res = await executeSecureRequest(table, onConflictParam, 'POST', body, {
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+          });
           if (!res.ok) {
             const msg = await getErrorMessage(res);
             return { error: new Error(msg) };
@@ -150,50 +206,9 @@ const createRestClient = (token) => ({
           return { error: err };
         }
       }
-    }),
-    insert: async (payload) => {
-      try {
-        const body = Array.isArray(payload) ? payload : [payload];
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-          method: 'POST',
-          headers: {
-            ...getRequestHeaders(token),
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-          const msg = await getErrorMessage(res);
-          return { error: new Error(msg) };
-        }
-        return { error: null };
-      } catch (err) {
-        return { error: err };
-      }
-    },
-    upsert: async (payload, options = {}) => {
-      try {
-        const body = Array.isArray(payload) ? payload : [payload];
-        const onConflictParam = options?.onConflict ? `?on_conflict=${encodeURIComponent(options.onConflict)}` : '';
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${onConflictParam}`, {
-          method: 'POST',
-          headers: {
-            ...getRequestHeaders(token),
-            'Prefer': 'resolution=merge-duplicates,return=minimal'
-          },
-          body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-          const msg = await getErrorMessage(res);
-          return { error: new Error(msg) };
-        }
-        return { error: null };
-      } catch (err) {
-        return { error: err };
-      }
-    }
-  })
-});
+    })
+  };
+};
 
 const useInjectGoogleFont = () => {
   useEffect(() => {
@@ -368,6 +383,11 @@ export default function App() {
     return null;
   });
 
+  const sessionRef = useRef(session);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
   const [user, setUser] = useState(() => session?.user || null);
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
   const [authLoading, setAuthLoading] = useState(false);
@@ -379,10 +399,73 @@ export default function App() {
     password: ''
   });
 
-  // Client REST instance with token injection
+  const [toast, setToast] = useState(null);
+
+  const showNotification = useCallback((text, type = 'success') => {
+    setToast({ text, type });
+    setTimeout(() => setToast(null), 4000);
+  }, []);
+
+  const refreshSessionToken = useCallback(async () => {
+    const currentRefresh = sessionRef.current?.refresh_token;
+    if (!currentRefresh) return null;
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ refresh_token: currentRefresh })
+      });
+
+      if (!res.ok) return null;
+
+      const data = await res.json();
+      if (data.access_token) {
+        const newSession = {
+          access_token: data.access_token,
+          refresh_token: data.refresh_token || currentRefresh,
+          user: data.user || sessionRef.current?.user
+        };
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newSession));
+        sessionRef.current = newSession;
+        setSession(newSession);
+        setUser(newSession.user);
+        return newSession;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    const activeUserId = sessionRef.current?.user?.id;
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    
+    // Purge cached financial data associated with the user
+    if (activeUserId) {
+      try {
+        localStorage.removeItem(`auto_months_${activeUserId}`);
+        localStorage.removeItem(`auto_sales_${activeUserId}`);
+      } catch (e) {}
+    }
+
+    sessionRef.current = null;
+    setSession(null);
+    setUser(null);
+    setMonths([]);
+    setSalesByMonth({});
+    setSelectedMonthId(null);
+    setCurrentScreen('HUB');
+    showNotification('Sessão encerrada com segurança.');
+  }, [showNotification]);
+
   const dbClient = useMemo(() => {
-    return createRestClient(session?.access_token);
-  }, [session?.access_token]);
+    return createRestClient(sessionRef, refreshSessionToken, handleLogout);
+  }, [refreshSessionToken, handleLogout]);
 
   // Operational Navigation & Data States
   const [currentScreen, setCurrentScreen] = useState('HUB');
@@ -397,7 +480,6 @@ export default function App() {
   const [monthToDelete, setMonthToDelete] = useState(null);
   const [showCalculationModal, setShowCalculationModal] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [toast, setToast] = useState(null);
 
   const [newMonthForm, setNewMonthForm] = useState({
     mes: MONTH_NAMES[new Date().getMonth()] || 'Setembro',
@@ -414,11 +496,6 @@ export default function App() {
   const [activeDonutSlice, setActiveDonutSlice] = useState(null);
   const [activeModelBar, setActiveModelBar] = useState(null);
   const [newSale, setNewSale] = useState(DEFAULT_SALE);
-
-  const showNotification = useCallback((text, type = 'success') => {
-    setToast({ text, type });
-    setTimeout(() => setToast(null), 3800);
-  }, []);
 
   const formatBRL = useCallback((val) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
@@ -462,6 +539,7 @@ export default function App() {
       };
 
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newSession));
+      sessionRef.current = newSession;
       setSession(newSession);
       setUser(data.user);
       showNotification(`Bem-vindo, ${data.user.user_metadata?.name || data.user.email}!`);
@@ -513,6 +591,7 @@ export default function App() {
           user: data.user
         };
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newSession));
+        sessionRef.current = newSession;
         setSession(newSession);
         setUser(data.user);
         showNotification('Conta criada e autenticada com sucesso!');
@@ -527,17 +606,6 @@ export default function App() {
     }
   };
 
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    setSession(null);
-    setUser(null);
-    setMonths([]);
-    setSalesByMonth({});
-    setSelectedMonthId(null);
-    setCurrentScreen('HUB');
-    showNotification('Sessão encerrada com sucesso.');
-  }, [showNotification]);
-
   useEffect(() => {
     if (!user?.id) {
       setMonths([]);
@@ -547,7 +615,6 @@ export default function App() {
     const userMonthsKey = `auto_months_${user.id}`;
     const userSalesKey = `auto_sales_${user.id}`;
 
-    // Load initial local data strictly scoped to this authenticated user
     try {
       const localM = localStorage.getItem(userMonthsKey);
       if (localM) setMonths(JSON.parse(localM));
@@ -577,7 +644,7 @@ export default function App() {
   }, [salesByMonth, user?.id]);
 
   const syncMonthToSupabase = useCallback(async (monthObj) => {
-    if (!user?.id || !session?.access_token) return;
+    if (!user?.id || !sessionRef.current?.access_token) return;
     try {
       const payload = {
         id: String(monthObj.id),
@@ -596,10 +663,10 @@ export default function App() {
       showNotification(`Erro ao sincronizar mês com a nuvem: ${err.message || 'Falha de comunicação'}`, 'error');
       throw err;
     }
-  }, [dbClient, user?.id, session?.access_token, showNotification]);
+  }, [dbClient, user?.id, showNotification]);
 
   const syncSalesToSupabase = useCallback(async (mId, salesList) => {
-    if (!user?.id || !session?.access_token) return;
+    if (!user?.id || !sessionRef.current?.access_token) return;
     try {
       const payload = salesList.map(s => ({
         id: String(s.id),
@@ -620,25 +687,40 @@ export default function App() {
         usados_captados: Number(s.usadosCaptados) || 0
       }));
 
-      const { error: delError } = await dbClient.from('vendas').delete().match({
-        mes_id: String(mId),
-        user_id: String(user.id)
-      });
-      if (delError) throw delError;
-
+      // Step 1: Safe Upsert of active items to prevent data loss on network drops
       if (payload.length > 0) {
-        const { error: insError } = await dbClient.from('vendas').insert(payload);
-        if (insError) throw insError;
+        const { error: upsertErr } = await dbClient.from('vendas').upsert(payload, { onConflict: 'id' });
+        if (upsertErr) throw upsertErr;
+      }
+
+      // Step 2: Fetch remote IDs to safely remove only deleted items
+      const { data: remoteRows, error: fetchErr } = await dbClient
+        .from('vendas')
+        .select('id', `mes_id=eq.${encodeURIComponent(mId)}&user_id=eq.${encodeURIComponent(user.id)}`);
+
+      if (!fetchErr && Array.isArray(remoteRows)) {
+        const currentActiveIds = new Set(salesList.map(s => String(s.id)));
+        const idsToRemove = remoteRows
+          .map(r => String(r.id))
+          .filter(id => !currentActiveIds.has(id));
+
+        for (const idToDelete of idsToRemove) {
+          const { error: delErr } = await dbClient.from('vendas').delete().match({
+            id: idToDelete,
+            user_id: String(user.id)
+          });
+          if (delErr) console.warn('Falha ao remover item deletado:', delErr);
+        }
       }
     } catch (err) {
       console.warn('Falha no upload de vendas:', err);
       showNotification(`Erro ao sincronizar vendas com a nuvem: ${err.message || 'Falha de comunicação'}`, 'error');
       throw err;
     }
-  }, [dbClient, user?.id, session?.access_token, showNotification]);
+  }, [dbClient, user?.id, showNotification]);
 
   useEffect(() => {
-    if (!user?.id || !session?.access_token) return;
+    if (!user?.id || !sessionRef.current?.access_token) return;
     let isSubscribed = true;
 
     const fetchFromSupabase = async () => {
@@ -650,7 +732,6 @@ export default function App() {
         if (monthsErr) throw monthsErr;
 
         if (isSubscribed && dbMonths && Array.isArray(dbMonths)) {
-          // If a new account has zero months in Supabase, keep state completely clean with 0 months
           if (dbMonths.length === 0) {
             setMonths([]);
             setSalesByMonth({});
@@ -706,7 +787,7 @@ export default function App() {
           }
         }
       } catch (err) {
-        console.warn('Conexão Supabase em modo contingência:', err);
+        console.warn('Conexão Supabase em contingência local:', err);
       }
     };
 
@@ -715,7 +796,7 @@ export default function App() {
     return () => {
       isSubscribed = false;
     };
-  }, [dbClient, user?.id, session?.access_token]);
+  }, [dbClient, user?.id]);
 
   const activeMonth = useMemo(() => {
     if (!selectedMonthId) return null;
@@ -928,7 +1009,7 @@ export default function App() {
     }
 
     setMonthToDelete(null);
-    showNotification("Mês e registros excluídos localmente!");
+    showNotification("Mês excluído localmente!");
 
     try {
       const { error: delVendasErr } = await dbClient.from('vendas').delete().match({
@@ -1405,7 +1486,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Print Executive Cards (Page 1) */}
         <div className="hidden print:grid print:grid-cols-4 print:gap-4 print:mb-3 print-avoid-break">
           
           <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
@@ -1510,7 +1590,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Screen Dashboard Cards (Visão Geral do Mês) */}
         <section className="w-full print:hidden">
           <div className="w-full px-6 sm:px-8 pt-6 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
@@ -1638,7 +1717,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Screen Manual Extras Summary */}
         <section className="w-full px-6 sm:px-8 mt-6 print:hidden">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -1674,7 +1752,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Sales Table Section */}
         <section className="w-full px-6 sm:px-8 mt-6 print:px-0 print:mt-0 print:space-y-0 print-avoid-break">
           <div className="flex items-center justify-between mb-3 print:hidden">
             <div>
@@ -1942,7 +2019,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Manual Extras Edit Form */}
         <section className="w-full px-6 sm:px-8 mt-6 print:hidden">
           <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 sm:p-8 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -2003,7 +2079,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Analytics BI Section */}
         <section className="w-full print:hidden">
           <div className="w-full px-6 sm:px-8 pt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div>
@@ -2128,7 +2203,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Chart 2: Composição da Comissão Bruta (Donut 260x260 + Grid 12 colunas) */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
@@ -2188,7 +2262,6 @@ export default function App() {
                           })}
                         </svg>
 
-                        {/* Miolo central preso EXCLUSIVAMENTE dentro do círculo do gráfico */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
                           <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">TOTAL BRUTO</span>
                           <span className="text-lg font-black text-slate-900 tracking-tight">{formatBRL(metrics.grossCommission)}</span>
@@ -2264,7 +2337,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Print Page 2: Auditoria e Gráficos */}
         <div className="hidden print:block print-page-break print:break-before-page pt-3">
           
           <div className="flex items-center justify-between border-b border-slate-300 pb-2 mb-3 text-slate-900 print-avoid-break">
@@ -2282,7 +2354,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Memória de Cálculo Completa na Impressão */}
           <div className="border border-slate-200 rounded-2xl bg-white p-4 mb-4 print-avoid-break">
             <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2 text-slate-900">
               <div className="flex items-center gap-2">
@@ -2398,9 +2469,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Gráficos Analíticos na Impressão */}
           <div className="grid grid-cols-2 gap-4 print-avoid-break">
-            
             <div className="border border-slate-200 rounded-2xl p-3.5 bg-white">
               <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2">
                 <div className="flex items-center gap-1.5">
@@ -2611,7 +2680,6 @@ export default function App() {
         </main>
       </div>
 
-      {/* Modal: Criar Novo Mês */}
       {isCreateMonthOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2831,7 +2899,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal: Memória de Cálculo */}
       {showCalculationModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2962,7 +3029,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal: Nova Venda */}
       {isAddModalOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
