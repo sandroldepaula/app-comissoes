@@ -635,10 +635,10 @@ export default function App() {
     if (total <= 0) return [];
 
     let accumulatedAngle = 0;
-    const cx = 125;
-    const cy = 125;
-    const outerR = 100;
-    const innerR = 68;
+    const cx = 160;
+    const cy = 160;
+    const outerR = 135;
+    const innerR = 92;
 
     return grossCommissionSlices.map((slice, index) => {
       const sweep = (slice.value / total) * 360;
@@ -1075,7 +1075,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 1.1 Print Executive Header (Page 1 Top) */}
+        {/* Print Executive Header (Page 1 Top) */}
         <div className="hidden print:flex items-center justify-between border-b border-slate-300 pb-2 mb-3 text-slate-900">
           <div className="flex items-baseline gap-2.5">
             <h1 className="text-base font-black tracking-tight text-slate-900 leading-none">
@@ -1098,6 +1098,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* Print Executive Cards (Page 1) */}
         <div className="hidden print:grid print:grid-cols-4 print:gap-4 print:mb-3 print-avoid-break">
           
           <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
@@ -1186,7 +1187,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* 1.3 Prêmios Extras Inline Strip (Print Page 1) */}
+        {/* Print Extras Inline Strip (Page 1) */}
         <div className="hidden print:flex items-center justify-between border border-slate-300 rounded-xl bg-slate-50/90 p-2 px-3 mb-3 text-[10px] text-slate-800 print-avoid-break">
           <div className="flex items-center gap-4">
             <span className="font-bold text-slate-900 uppercase tracking-wider text-[8.5px] bg-slate-200/90 px-2 py-0.5 rounded">
@@ -1202,6 +1203,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* Screen Dashboard Cards (Visão Geral do Mês) */}
         <section className="space-y-3 print:hidden">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
@@ -1329,6 +1331,7 @@ export default function App() {
           </div>
         </section>
 
+        {/* Screen Manual Extras Summary */}
         <section className="space-y-3 print:hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -1364,6 +1367,7 @@ export default function App() {
           </div>
         </section>
 
+        {/* Sales Table Section */}
         <section className="space-y-3 print:space-y-0 print-avoid-break">
           <div className="flex items-center justify-between print:hidden">
             <div>
@@ -1631,6 +1635,7 @@ export default function App() {
           </div>
         </section>
 
+        {/* Manual Extras Edit Form */}
         <section className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 sm:p-8 space-y-4 print:hidden">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
@@ -1689,6 +1694,7 @@ export default function App() {
           </div>
         </section>
 
+        {/* Analytics BI Section */}
         <section className="space-y-4 print:hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div>
@@ -1710,7 +1716,7 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Gráfico 1: Volume por Modelo (Screen) */}
+            {/* Chart 1: Volume por Modelo */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
@@ -1738,7 +1744,7 @@ export default function App() {
                     <span>Nenhum veículo lançado para análise gráfica.</span>
                   </div>
                 ) : (
-                  <div className="space-y-3.5 max-h-[360px] overflow-y-auto pr-1">
+                  <div className="min-h-[400px] max-h-[540px] overflow-y-auto pr-2 space-y-3">
                     {modelVolumeData.map((item, idx) => {
                       const isHovered = activeModelBar === item.model;
                       const maxCount = modelVolumeData[0]?.count || 1;
@@ -1813,7 +1819,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Gráfico 2: Composição da Comissão Bruta (Donut 250x250 e legenda ajustada sem colisões) */}
+            {/* Chart 2: Composição da Comissão Bruta (Donut Expandido 320x320 + Legenda Compacta) */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
@@ -1834,7 +1840,7 @@ export default function App() {
                 </span>
               </div>
 
-              <div className="pt-4 pb-2 flex-1 flex flex-col md:flex-row items-center justify-center md:justify-start gap-4 sm:gap-6">
+              <div className="pt-4 pb-2 flex-1 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
                 {grossCommissionSlices.length === 0 ? (
                   <div className="h-56 flex flex-col items-center justify-center text-slate-400 text-xs w-full">
                     <Calculator size={28} className="mb-2 text-slate-300" />
@@ -1842,69 +1848,74 @@ export default function App() {
                   </div>
                 ) : (
                   <>
-                    <div className="relative w-[250px] h-[250px] shrink-0 flex items-center justify-center">
-                      <svg width="250" height="250" viewBox="0 0 250 250" className="overflow-visible">
-                        <defs>
-                          <filter id="donutGlow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
-                          </filter>
-                        </defs>
+                    {/* Container do Gráfico Donut Expandido */}
+                    <div className="flex-1 flex items-center justify-center min-w-0 p-2">
+                      <div className="relative w-full max-w-[320px] aspect-square shrink-0 flex items-center justify-center">
+                        <svg width="100%" height="100%" viewBox="0 0 320 320" className="overflow-visible">
+                          <defs>
+                            <filter id="donutGlow" x="-20%" y="-20%" width="140%" height="140%">
+                              <feDropShadow dx="0" dy="4" stdDeviation="5" floodOpacity="0.18" />
+                            </filter>
+                          </defs>
 
-                        {donutGeometry.map((slice) => {
-                          const isHovered = activeDonutSlice === slice.index;
-                          return (
-                            <path
-                              key={slice.id}
-                              d={slice.pathData}
-                              fill={slice.color}
-                              className="transition-all duration-200 cursor-pointer"
-                              style={{
-                                transformOrigin: '125px 125px',
-                                transform: isHovered ? 'scale(1.04)' : 'scale(1)',
-                                filter: isHovered ? 'url(#donutGlow)' : 'none',
-                                opacity: activeDonutSlice !== null && !isHovered ? 0.45 : 1
-                              }}
-                              onMouseEnter={() => setActiveDonutSlice(slice.index)}
-                              onMouseLeave={() => setActiveDonutSlice(null)}
-                            />
-                          );
-                        })}
-                      </svg>
+                          {donutGeometry.map((slice) => {
+                            const isHovered = activeDonutSlice === slice.index;
+                            return (
+                              <path
+                                key={slice.id}
+                                d={slice.pathData}
+                                fill={slice.color}
+                                className="transition-all duration-200 cursor-pointer"
+                                style={{
+                                  transformOrigin: '160px 160px',
+                                  transform: isHovered ? 'scale(1.03)' : 'scale(1)',
+                                  filter: isHovered ? 'url(#donutGlow)' : 'none',
+                                  opacity: activeDonutSlice !== null && !isHovered ? 0.45 : 1
+                                }}
+                                onMouseEnter={() => setActiveDonutSlice(slice.index)}
+                                onMouseLeave={() => setActiveDonutSlice(null)}
+                              />
+                            );
+                          })}
+                        </svg>
 
-                      <div className="absolute inset-0 m-auto w-[124px] h-[124px] rounded-full bg-white/95 backdrop-blur-sm border border-slate-100 shadow-xs flex flex-col items-center justify-center text-center p-2.5 pointer-events-none">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">
-                          Total Bruto
-                        </span>
-                        <span className="text-xs font-extrabold text-slate-900 tracking-tight mt-1 truncate max-w-[110px]">
-                          {formatBRL(metrics.grossCommission)}
-                        </span>
-                        <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1 border border-emerald-100">
-                          100% Ativo
-                        </span>
-                      </div>
-
-                      {activeDonutSlice !== null && donutGeometry[activeDonutSlice] && (
-                        <div className="absolute -bottom-3 z-30 pointer-events-none backdrop-blur-md bg-slate-900/95 text-white py-1.5 px-3 rounded-xl border border-slate-700 shadow-2xl text-[11px] whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
-                          <div className="flex items-center gap-1.5">
-                            <span 
-                              className="w-2 h-2 rounded-full shrink-0" 
-                              style={{ backgroundColor: donutGeometry[activeDonutSlice].color }} 
-                            />
-                            <span className="font-semibold text-slate-200">
-                              {donutGeometry[activeDonutSlice].label}:
-                            </span>
-                            <span className="font-bold text-white">
-                              {formatBRL(donutGeometry[activeDonutSlice].value)}
-                            </span>
-                            <span className="text-sky-300 font-semibold">
-                              ({donutGeometry[activeDonutSlice].percent.toFixed(1).replace('.', ',')}%)
-                            </span>
-                          </div>
+                        {/* Miolo Central Branco Ampliado */}
+                        <div className="absolute inset-0 m-auto w-[170px] h-[170px] rounded-full bg-white/95 backdrop-blur-sm border border-slate-100 shadow-xs flex flex-col items-center justify-center text-center p-3 pointer-events-none">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider leading-none">
+                            Total Bruto
+                          </span>
+                          <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-1.5 truncate max-w-[150px]">
+                            {formatBRL(metrics.grossCommission)}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full mt-1.5 border border-emerald-200 inline-block">
+                            100% Ativo
+                          </span>
                         </div>
-                      )}
+
+                        {activeDonutSlice !== null && donutGeometry[activeDonutSlice] && (
+                          <div className="absolute -bottom-3 z-30 pointer-events-none backdrop-blur-md bg-slate-900/95 text-white py-1.5 px-3 rounded-xl border border-slate-700 shadow-2xl text-[11px] whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
+                            <div className="flex items-center gap-1.5">
+                              <span 
+                                className="w-2 h-2 rounded-full shrink-0" 
+                                style={{ backgroundColor: donutGeometry[activeDonutSlice].color }} 
+                              />
+                              <span className="font-semibold text-slate-200">
+                                {donutGeometry[activeDonutSlice].label}:
+                              </span>
+                              <span className="font-bold text-white">
+                                {formatBRL(donutGeometry[activeDonutSlice].value)}
+                              </span>
+                              <span className="text-sky-300 font-semibold">
+                                ({donutGeometry[activeDonutSlice].percent.toFixed(1).replace('.', ',')}%)
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex-1 w-full max-w-[420px] max-h-[300px] overflow-y-auto pr-1 space-y-1 text-xs">
+                    {/* Lista Lateral de Legendas Compacta */}
+                    <div className="w-full md:w-auto md:min-w-[270px] md:max-w-[310px] shrink-0 min-h-[380px] max-h-[520px] overflow-y-auto pr-1.5 space-y-1 text-xs">
                       {grossCommissionSlices.map((slice, index) => {
                         const isHovered = activeDonutSlice === index;
                         return (
@@ -1912,26 +1923,26 @@ export default function App() {
                             key={slice.id}
                             onMouseEnter={() => setActiveDonutSlice(index)}
                             onMouseLeave={() => setActiveDonutSlice(null)}
-                            className={`flex items-center justify-between gap-3 p-2 px-3 rounded-xl min-h-[38px] border transition-all cursor-pointer ${
+                            className={`flex items-center justify-between gap-3 py-1.5 px-2.5 rounded-lg border transition-colors cursor-pointer ${
                               isHovered 
                                 ? 'bg-slate-50/90 border-slate-300 shadow-xs' 
-                                : 'bg-transparent border-transparent hover:bg-slate-50/80'
+                                : 'bg-transparent border-transparent hover:bg-slate-50'
                             }`}
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="flex items-center gap-2 min-w-0">
                               <span 
-                                className="w-3 h-3 rounded-full shrink-0 shadow-xs" 
+                                className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" 
                                 style={{ backgroundColor: slice.color }} 
                               />
-                              <span className="text-xs font-semibold text-slate-700 truncate">
+                              <span className="text-xs font-semibold text-slate-800 truncate" title={slice.label}>
                                 {slice.shortLabel || slice.label}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-2.5 shrink-0">
                               <span className="text-xs font-bold text-slate-900 font-mono">
                                 {formatBRL(slice.value)}
                               </span>
-                              <span className="text-[11px] font-semibold text-slate-500 w-12 text-right">
+                              <span className="text-[11px] font-semibold text-slate-500 w-11 text-right">
                                 {slice.percent.toFixed(1).replace('.', ',')}%
                               </span>
                             </div>
@@ -1953,6 +1964,7 @@ export default function App() {
           </div>
         </section>
 
+        {/* Print Page 2: Auditoria e Gráficos */}
         <div className="hidden print:block print-page-break print:break-before-page pt-3">
           
           <div className="flex items-center justify-between border-b border-slate-300 pb-2 mb-3 text-slate-900 print-avoid-break">
@@ -1970,6 +1982,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Memória de Cálculo Completa na Impressão */}
           <div className="border border-slate-200 rounded-2xl bg-white p-4 mb-4 print-avoid-break">
             <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2 text-slate-900">
               <div className="flex items-center gap-2">
@@ -2085,6 +2098,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Gráficos Analíticos na Impressão */}
           <div className="grid grid-cols-2 gap-4 print-avoid-break">
             
             <div className="border border-slate-200 rounded-2xl p-3.5 bg-white">
@@ -2163,8 +2177,8 @@ export default function App() {
                   </div>
                 ) : (
                   <>
-                    <div className="relative w-[120px] h-[120px] shrink-0 flex items-center justify-center">
-                      <svg width="120" height="120" viewBox="0 0 250 250" className="overflow-visible">
+                    <div className="relative w-[120px] height-[120px] shrink-0 flex items-center justify-center">
+                      <svg width="120" height="120" viewBox="0 0 320 320" className="overflow-visible">
                         {donutGeometry.map((slice) => (
                           <path
                             key={slice.id}
@@ -2224,9 +2238,9 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Top Header: Expanded to max-w-[1720px] for widescreen desktops */}
+      {/* Main Top Header */}
       <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-sm print:hidden">
-        <div className="max-w-[1720px] mx-auto px-6 sm:px-8 py-4 flex flex-row justify-between items-center gap-4">
+        <div className="w-full max-w-[1850px] mx-auto px-4 sm:px-8 py-4 flex flex-row justify-between items-center gap-4">
           
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentScreen('HUB')}>
             <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
@@ -2263,11 +2277,12 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Container: Expanded to max-w-[1720px] for desktop comfort */}
-      <main className="max-w-[1720px] mx-auto px-6 sm:px-8 pt-8 print:px-0 print:pt-0 print:max-w-none print:m-0 print:w-full">
+      {/* Main Container */}
+      <main className="w-full max-w-[1850px] mx-auto px-4 sm:px-8 pt-6 pb-16 print:px-0 print:pt-0 print:max-w-none print:m-0 print:w-full">
         {currentScreen === 'HUB' ? renderHubScreen() : renderDetailScreen()}
       </main>
 
+      {/* Modal: Criar Novo Mês */}
       {isCreateMonthOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2358,6 +2373,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Modal: Editar Competência */}
       {isEditMonthOpen && monthToEdit && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2448,6 +2464,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Modal: Confirmar Exclusão de Mês */}
       {monthToDelete && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2485,6 +2502,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Modal: Memória de Cálculo */}
       {showCalculationModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2615,6 +2633,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Modal: Nova Venda */}
       {isAddModalOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -2858,6 +2877,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Print Dedicated Media Styles */}
       <style>{`
         @media print {
           @page {
