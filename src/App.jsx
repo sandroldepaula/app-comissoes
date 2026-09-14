@@ -22,128 +22,20 @@ import {
   Calendar, 
   Target, 
   ChevronRight, 
-  AlertTriangle 
+  AlertTriangle,
+  User,
+  LogOut,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Loader2
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://hhmtsvicjtqydrjvacze.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhobXRzdmljanRxeWRyanZhY3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNzM4NjEsImV4cCI6MjEwNDc0OTg2MX0.eCRTXvxOsLkvdFUS3_5JmfE7XNLjKvKWdl61jUN9new';
 
-if (typeof document !== 'undefined' && !document.getElementById('supabase-cdn-sdk')) {
-  const script = document.createElement('script');
-  script.id = 'supabase-cdn-sdk';
-  script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-  script.async = true;
-  document.head.appendChild(script);
-}
-
-const defaultHeaders = {
-  'apikey': SUPABASE_ANON_KEY,
-  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json'
-};
-
-const getErrorMessage = async (res) => {
-  try {
-    const json = await res.json();
-    return json?.message || json?.error || res.statusText || 'Erro na requisição';
-  } catch (e) {
-    return res.statusText || 'Erro na requisição';
-  }
-};
-
-const nativeRestClient = {
-  from: (table) => ({
-    select: async (cols = '*') => {
-      try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(cols)}`, {
-          method: 'GET',
-          headers: defaultHeaders
-        });
-        if (!res.ok) {
-          const msg = await getErrorMessage(res);
-          return { data: null, error: new Error(msg) };
-        }
-        const data = await res.json();
-        return { data, error: null };
-      } catch (err) {
-        return { data: null, error: err };
-      }
-    },
-    delete: () => ({
-      eq: async (column, value) => {
-        try {
-          const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/${table}?${encodeURIComponent(column)}=eq.${encodeURIComponent(value)}`,
-            {
-              method: 'DELETE',
-              headers: defaultHeaders
-            }
-          );
-          if (!res.ok) {
-            const msg = await getErrorMessage(res);
-            return { error: new Error(msg) };
-          }
-          return { error: null };
-        } catch (err) {
-          return { error: err };
-        }
-      }
-    }),
-    insert: async (payload) => {
-      try {
-        const body = Array.isArray(payload) ? payload : [payload];
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-          method: 'POST',
-          headers: {
-            ...defaultHeaders,
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-          const msg = await getErrorMessage(res);
-          return { error: new Error(msg) };
-        }
-        return { error: null };
-      } catch (err) {
-        return { error: err };
-      }
-    },
-    upsert: async (payload, options = {}) => {
-      try {
-        const body = Array.isArray(payload) ? payload : [payload];
-        const onConflictParam = options?.onConflict ? `?on_conflict=${encodeURIComponent(options.onConflict)}` : '';
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${onConflictParam}`, {
-          method: 'POST',
-          headers: {
-            ...defaultHeaders,
-            'Prefer': 'resolution=merge-duplicates,return=minimal'
-          },
-          body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-          const msg = await getErrorMessage(res);
-          return { error: new Error(msg) };
-        }
-        return { error: null };
-      } catch (err) {
-        return { error: err };
-      }
-    }
-  })
-};
-
-const supabase = {
-  from: (table) => {
-    if (typeof window !== 'undefined' && window.supabase?.createClient) {
-      if (!window.__supabaseOfficialClient) {
-        window.__supabaseOfficialClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      }
-      return window.__supabaseOfficialClient.from(table);
-    }
-    return nativeRestClient.from(table);
-  }
-};
+const AUTH_STORAGE_KEY = 'auto_auth_session_v1';
 
 const R_RATES = {
   R0: 0,
@@ -181,6 +73,127 @@ const DEFAULT_SALE = {
   bonusCarro: 0,
   usadosCaptados: 0
 };
+
+const getErrorMessage = async (res) => {
+  try {
+    const json = await res.json();
+    return json?.error_description || json?.message || json?.msg || json?.error || res.statusText || 'Erro na requisição';
+  } catch (e) {
+    return res.statusText || 'Erro na requisição';
+  }
+};
+
+const getRequestHeaders = (token) => ({
+  'apikey': SUPABASE_ANON_KEY,
+  'Authorization': token ? `Bearer ${token}` : `Bearer ${SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json'
+});
+
+const createRestClient = (token) => ({
+  from: (table) => ({
+    select: async (cols = '*', queryParams = '') => {
+      try {
+        const url = queryParams 
+          ? `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(cols)}&${queryParams}`
+          : `${SUPABASE_URL}/rest/v1/${table}?select=${encodeURIComponent(cols)}`;
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: getRequestHeaders(token)
+        });
+        if (!res.ok) {
+          const msg = await getErrorMessage(res);
+          return { data: null, error: new Error(msg) };
+        }
+        const data = await res.json();
+        return { data, error: null };
+      } catch (err) {
+        return { data: null, error: err };
+      }
+    },
+    delete: () => ({
+      match: async (filtersObj) => {
+        try {
+          const params = Object.entries(filtersObj)
+            .map(([k, v]) => `${encodeURIComponent(k)}=eq.${encodeURIComponent(v)}`)
+            .join('&');
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/${table}?${params}`,
+            {
+              method: 'DELETE',
+              headers: getRequestHeaders(token)
+            }
+          );
+          if (!res.ok) {
+            const msg = await getErrorMessage(res);
+            return { error: new Error(msg) };
+          }
+          return { error: null };
+        } catch (err) {
+          return { error: err };
+        }
+      },
+      eq: async (column, value) => {
+        try {
+          const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/${table}?${encodeURIComponent(column)}=eq.${encodeURIComponent(value)}`,
+            {
+              method: 'DELETE',
+              headers: getRequestHeaders(token)
+            }
+          );
+          if (!res.ok) {
+            const msg = await getErrorMessage(res);
+            return { error: new Error(msg) };
+          }
+          return { error: null };
+        } catch (err) {
+          return { error: err };
+        }
+      }
+    }),
+    insert: async (payload) => {
+      try {
+        const body = Array.isArray(payload) ? payload : [payload];
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+          method: 'POST',
+          headers: {
+            ...getRequestHeaders(token),
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const msg = await getErrorMessage(res);
+          return { error: new Error(msg) };
+        }
+        return { error: null };
+      } catch (err) {
+        return { error: err };
+      }
+    },
+    upsert: async (payload, options = {}) => {
+      try {
+        const body = Array.isArray(payload) ? payload : [payload];
+        const onConflictParam = options?.onConflict ? `?on_conflict=${encodeURIComponent(options.onConflict)}` : '';
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${onConflictParam}`, {
+          method: 'POST',
+          headers: {
+            ...getRequestHeaders(token),
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+          },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const msg = await getErrorMessage(res);
+          return { error: new Error(msg) };
+        }
+        return { error: null };
+      } catch (err) {
+        return { error: err };
+      }
+    }
+  })
+});
 
 const useInjectGoogleFont = () => {
   useEffect(() => {
@@ -346,30 +359,37 @@ const computeMonthMetrics = (salesList = [], extrasObj = DEFAULT_EXTRAS, netPct 
 export default function App() {
   useInjectGoogleFont();
 
+  // Authentication State
+  const [session, setSession] = useState(() => {
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return null;
+  });
+
+  const [user, setUser] = useState(() => session?.user || null);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [authLoading, setAuthLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [authForm, setAuthForm] = useState({
+    name: '',
+    email: '',
+    password: ''
+  });
+
+  // Client REST instance with token injection
+  const dbClient = useMemo(() => {
+    return createRestClient(session?.access_token);
+  }, [session?.access_token]);
+
+  // Operational Navigation & Data States
   const [currentScreen, setCurrentScreen] = useState('HUB');
   const [selectedMonthId, setSelectedMonthId] = useState(null);
 
-  const [months, setMonths] = useState(() => {
-    const local = localStorage.getItem('auto_months_hub_v1');
-    if (local) {
-      try {
-        const parsed = JSON.parse(local);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (e) {}
-    }
-    return [];
-  });
-
-  const [salesByMonth, setSalesByMonth] = useState(() => {
-    const local = localStorage.getItem('auto_sales_by_month_v1');
-    if (local) {
-      try {
-        const parsed = JSON.parse(local);
-        if (parsed && typeof parsed === 'object') return parsed;
-      } catch (e) {}
-    }
-    return {};
-  });
+  const [months, setMonths] = useState([]);
+  const [salesByMonth, setSalesByMonth] = useState({});
 
   const [isCreateMonthOpen, setIsCreateMonthOpen] = useState(false);
   const [isEditMonthOpen, setIsEditMonthOpen] = useState(false);
@@ -397,7 +417,7 @@ export default function App() {
 
   const showNotification = useCallback((text, type = 'success') => {
     setToast({ text, type });
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 3800);
   }, []);
 
   const formatBRL = useCallback((val) => {
@@ -408,10 +428,160 @@ export default function App() {
     return (val * 100).toFixed(2).replace('.', ',') + '%';
   }, []);
 
-  const syncMonthToSupabase = async (monthObj) => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!authForm.email || !authForm.password) {
+      showNotification('Por favor, preencha todos os campos.', 'error');
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: authForm.email.trim(),
+          password: authForm.password
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        const errorDesc = data.error_description || data.message || data.msg || 'Falha ao autenticar';
+        throw new Error(errorDesc === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : errorDesc);
+      }
+
+      const newSession = {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        user: data.user
+      };
+
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newSession));
+      setSession(newSession);
+      setUser(data.user);
+      showNotification(`Bem-vindo, ${data.user.user_metadata?.name || data.user.email}!`);
+    } catch (err) {
+      showNotification(err.message || 'Erro ao realizar login', 'error');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    if (!authForm.email || !authForm.password) {
+      showNotification('Preencha seu e-mail e crie uma senha.', 'error');
+      return;
+    }
+    if (authForm.password.length < 6) {
+      showNotification('A senha deve conter no mínimo 6 caracteres.', 'error');
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: authForm.email.trim(),
+          password: authForm.password,
+          data: {
+            name: authForm.name.trim() || 'Consultor'
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        const errorDesc = data.error_description || data.message || data.msg || 'Erro ao criar conta';
+        throw new Error(errorDesc);
+      }
+
+      if (data.access_token) {
+        const newSession = {
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          user: data.user
+        };
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newSession));
+        setSession(newSession);
+        setUser(data.user);
+        showNotification('Conta criada e autenticada com sucesso!');
+      } else {
+        showNotification('Conta criada com sucesso! Você já pode realizar o login.');
+        setAuthMode('login');
+      }
+    } catch (err) {
+      showNotification(err.message || 'Erro ao criar conta', 'error');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    setSession(null);
+    setUser(null);
+    setMonths([]);
+    setSalesByMonth({});
+    setSelectedMonthId(null);
+    setCurrentScreen('HUB');
+    showNotification('Sessão encerrada com sucesso.');
+  }, [showNotification]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setMonths([]);
+      setSalesByMonth({});
+      return;
+    }
+    const userMonthsKey = `auto_months_${user.id}`;
+    const userSalesKey = `auto_sales_${user.id}`;
+
+    // Load initial local data strictly scoped to this authenticated user
+    try {
+      const localM = localStorage.getItem(userMonthsKey);
+      if (localM) setMonths(JSON.parse(localM));
+      else setMonths([]);
+
+      const localS = localStorage.getItem(userSalesKey);
+      if (localS) setSalesByMonth(JSON.parse(localS));
+      else setSalesByMonth({});
+    } catch (e) {
+      setMonths([]);
+      setSalesByMonth({});
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      localStorage.setItem(`auto_months_${user.id}`, JSON.stringify(months));
+    } catch (e) {}
+  }, [months, user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      localStorage.setItem(`auto_sales_${user.id}`, JSON.stringify(salesByMonth));
+    } catch (e) {}
+  }, [salesByMonth, user?.id]);
+
+  const syncMonthToSupabase = useCallback(async (monthObj) => {
+    if (!user?.id || !session?.access_token) return;
     try {
       const payload = {
         id: String(monthObj.id),
+        user_id: String(user.id),
         nome_mes: String(monthObj.mes || ''),
         ano: String(monthObj.ano || '2026'),
         meta: Number(monthObj.meta) || 0,
@@ -419,19 +589,21 @@ export default function App() {
         lancamentos_extras: monthObj.extras || DEFAULT_EXTRAS
       };
 
-      const { error } = await supabase.from('meses').upsert(payload, { onConflict: 'id' });
+      const { error } = await dbClient.from('meses').upsert(payload, { onConflict: 'id' });
       if (error) throw error;
     } catch (err) {
       console.warn('Falha no upload do mês:', err);
       showNotification(`Erro ao sincronizar mês com a nuvem: ${err.message || 'Falha de comunicação'}`, 'error');
       throw err;
     }
-  };
+  }, [dbClient, user?.id, session?.access_token, showNotification]);
 
-  const syncSalesToSupabase = async (mId, salesList) => {
+  const syncSalesToSupabase = useCallback(async (mId, salesList) => {
+    if (!user?.id || !session?.access_token) return;
     try {
       const payload = salesList.map(s => ({
         id: String(s.id),
+        user_id: String(user.id),
         mes_id: String(mId),
         cliente: String(s.client || ''),
         carro: String(s.car || ''),
@@ -448,11 +620,14 @@ export default function App() {
         usados_captados: Number(s.usadosCaptados) || 0
       }));
 
-      const { error: delError } = await supabase.from('vendas').delete().eq('mes_id', String(mId));
+      const { error: delError } = await dbClient.from('vendas').delete().match({
+        mes_id: String(mId),
+        user_id: String(user.id)
+      });
       if (delError) throw delError;
 
       if (payload.length > 0) {
-        const { error: insError } = await supabase.from('vendas').insert(payload);
+        const { error: insError } = await dbClient.from('vendas').insert(payload);
         if (insError) throw insError;
       }
     } catch (err) {
@@ -460,60 +635,35 @@ export default function App() {
       showNotification(`Erro ao sincronizar vendas com a nuvem: ${err.message || 'Falha de comunicação'}`, 'error');
       throw err;
     }
-  };
+  }, [dbClient, user?.id, session?.access_token, showNotification]);
 
   useEffect(() => {
-    localStorage.setItem('auto_months_hub_v1', JSON.stringify(months));
-  }, [months]);
-
-  useEffect(() => {
-    localStorage.setItem('auto_sales_by_month_v1', JSON.stringify(salesByMonth));
-  }, [salesByMonth]);
-
-  useEffect(() => {
+    if (!user?.id || !session?.access_token) return;
     let isSubscribed = true;
 
     const fetchFromSupabase = async () => {
       try {
-        const { data: dbMonths, error: monthsErr } = await supabase
+        const { data: dbMonths, error: monthsErr } = await dbClient
           .from('meses')
-          .select('*');
+          .select('*', `user_id=eq.${encodeURIComponent(user.id)}`);
 
         if (monthsErr) throw monthsErr;
 
         if (isSubscribed && dbMonths && Array.isArray(dbMonths)) {
-          const localMonthsRaw = localStorage.getItem('auto_months_hub_v1');
-          let localMonthsData = [];
-          try {
-            localMonthsData = localMonthsRaw ? JSON.parse(localMonthsRaw) : [];
-          } catch (e) {}
-
-          const localSalesRaw = localStorage.getItem('auto_sales_by_month_v1');
-          let localSalesData = {};
-          try {
-            localSalesData = localSalesRaw ? JSON.parse(localSalesRaw) : {};
-          } catch (e) {}
-
-          if (dbMonths.length === 0 && Array.isArray(localMonthsData) && localMonthsData.length > 0) {
-            setMonths(localMonthsData);
-            setSalesByMonth(localSalesData);
-
+          // If a new account has zero months in Supabase, keep state completely clean with 0 months
+          if (dbMonths.length === 0) {
+            setMonths([]);
+            setSalesByMonth({});
             try {
-              for (const m of localMonthsData) {
-                await syncMonthToSupabase(m);
-                const sales = localSalesData[String(m.id)] || [];
-                if (sales.length > 0) {
-                  await syncSalesToSupabase(String(m.id), sales);
-                }
-              }
-            } catch (errSync) {
-              console.warn('Erro ao subir dados locais para nuvem:', errSync);
-            }
+              localStorage.setItem(`auto_months_${user.id}`, JSON.stringify([]));
+              localStorage.setItem(`auto_sales_${user.id}`, JSON.stringify({}));
+            } catch (e) {}
             return;
           }
 
           const normalizedMonths = dbMonths.map(m => ({
             id: String(m.id),
+            user_id: String(m.user_id || user.id),
             mes: String(m.nome_mes || 'Mês'),
             ano: String(m.ano || 2026),
             meta: Number(m.meta) || 15,
@@ -523,9 +673,9 @@ export default function App() {
 
           setMonths(normalizedMonths);
 
-          const { data: dbVendas, error: vendasErr } = await supabase
+          const { data: dbVendas, error: vendasErr } = await dbClient
             .from('vendas')
-            .select('*');
+            .select('*', `user_id=eq.${encodeURIComponent(user.id)}`);
 
           if (vendasErr) throw vendasErr;
 
@@ -536,6 +686,7 @@ export default function App() {
               if (!mapped[mId]) mapped[mId] = [];
               mapped[mId].push({
                 id: String(v.id),
+                user_id: String(v.user_id || user.id),
                 client: String(v.cliente || ''),
                 car: String(v.carro || ''),
                 vn: Number(v.vn) || 0,
@@ -564,7 +715,7 @@ export default function App() {
     return () => {
       isSubscribed = false;
     };
-  }, []);
+  }, [dbClient, user?.id, session?.access_token]);
 
   const activeMonth = useMemo(() => {
     if (!selectedMonthId) return null;
@@ -693,9 +844,11 @@ export default function App() {
 
   const handleCreateMonth = async (e) => {
     e.preventDefault();
+    if (!user?.id) return;
     const newId = 'm_' + Date.now();
     const createdMonth = {
       id: newId,
+      user_id: String(user.id),
       mes: newMonthForm.mes,
       ano: String(newMonthForm.ano || 2026),
       meta: Number(newMonthForm.meta) || 15,
@@ -734,10 +887,11 @@ export default function App() {
 
   const handleUpdateMonth = async (e) => {
     e.preventDefault();
-    if (!monthToEdit) return;
+    if (!monthToEdit || !user?.id) return;
 
     const updatedMonth = {
       ...monthToEdit,
+      user_id: String(user.id),
       mes: editMonthForm.mes,
       ano: String(editMonthForm.ano || '2026'),
       meta: Number(editMonthForm.meta) || 0
@@ -758,7 +912,7 @@ export default function App() {
   };
 
   const handleConfirmDeleteMonth = async () => {
-    if (!monthToDelete) return;
+    if (!monthToDelete || !user?.id) return;
     const mId = String(monthToDelete.id);
 
     setMonths(prev => prev.filter(m => String(m.id) !== mId));
@@ -777,9 +931,15 @@ export default function App() {
     showNotification("Mês e registros excluídos localmente!");
 
     try {
-      const { error: delVendasErr } = await supabase.from('vendas').delete().eq('mes_id', mId);
+      const { error: delVendasErr } = await dbClient.from('vendas').delete().match({
+        mes_id: mId,
+        user_id: String(user.id)
+      });
       if (delVendasErr) throw delVendasErr;
-      const { error: delMesErr } = await supabase.from('meses').delete().eq('id', mId);
+      const { error: delMesErr } = await dbClient.from('meses').delete().match({
+        id: mId,
+        user_id: String(user.id)
+      });
       if (delMesErr) throw delMesErr;
       showNotification("Mês excluído da nuvem com sucesso!");
     } catch (e) {
@@ -842,7 +1002,7 @@ export default function App() {
   };
 
   const handleSaveNewSale = () => {
-    if (!selectedMonthId) return;
+    if (!selectedMonthId || !user?.id) return;
     const currentSales = salesByMonth[selectedMonthId] || [];
     const clientName = newSale.client.trim() || `Cliente ${currentSales.length + 1}`;
     const carName = newSale.car.trim() || 'Veículo';
@@ -850,6 +1010,7 @@ export default function App() {
     const saleToAdd = {
       ...newSale,
       id: 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      user_id: String(user.id),
       client: clientName,
       car: carName
     };
@@ -861,6 +1022,150 @@ export default function App() {
     showNotification("Venda adicionada com sucesso!");
     syncSalesToSupabase(selectedMonthId, nextSales);
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 font-['Inter',sans-serif] antialiased selection:bg-sky-500 selection:text-white">
+        {toast && (
+          <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all duration-300 animate-in fade-in slide-in-from-bottom-3 ${
+            toast.type === 'error' 
+              ? 'bg-rose-50 border-rose-200 text-rose-800' 
+              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          }`}>
+            <CheckCircle2 size={18} className={toast.type === 'error' ? 'text-rose-600' : 'text-emerald-600'} />
+            <span>{toast.text}</span>
+          </div>
+        )}
+
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-slate-200/80 animate-in zoom-in-95 duration-200">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center mb-3 shadow-xs">
+              <Car size={26} strokeWidth={2.2} />
+            </div>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">
+              Gestão & Comissões Auto
+            </h1>
+            <p className="text-xs text-slate-500 mt-1 max-w-xs leading-relaxed">
+              Plataforma comercial com sincronização em nuvem e isolamento seguro de dados.
+            </p>
+          </div>
+
+          <div className="flex rounded-2xl bg-slate-100 p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => setAuthMode('login')}
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+                authMode === 'login'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Acessar Conta
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMode('signup')}
+              className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+                authMode === 'signup'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Criar Conta
+            </button>
+          </div>
+
+          <form onSubmit={authMode === 'login' ? handleLogin : handleSignUp} className="space-y-4">
+            {authMode === 'signup' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Nome Completo
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <User size={16} />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={authForm.name}
+                    onChange={(e) => setAuthForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Ex: João da Silva"
+                    className="w-full pl-10 pr-3 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                E-mail Corporativo ou Pessoal
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Mail size={16} />
+                </div>
+                <input
+                  type="email"
+                  required
+                  value={authForm.email}
+                  onChange={(e) => setAuthForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="seuemail@exemplo.com"
+                  className="w-full pl-10 pr-3 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Senha de Acesso
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Lock size={16} />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  value={authForm.password}
+                  onChange={(e) => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(p => !p)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs py-3 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/25 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            >
+              {authLoading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>{authMode === 'login' ? 'Autenticando...' : 'Criando Conta...'}</span>
+                </>
+              ) : (
+                <span>{authMode === 'login' ? 'Entrar no Sistema' : 'Criar Minha Conta'}</span>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
+            <span>Seus dados comerciais são protegidos por criptografia e RLS.</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const renderHubScreen = () => {
     return (
@@ -1854,7 +2159,6 @@ export default function App() {
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-3">
                     {/* COLUNA ESQUERDA: GRÁFICO DONUT (5 colunas) */}
                     <div className="lg:col-span-5 flex items-center justify-center">
-                      {/* Container relativo travado onde o miolo fica preso EXCLUSIVAMENTE dentro do SVG */}
                       <div className="relative w-[260px] h-[260px] flex items-center justify-center shrink-0">
                         <svg width="260" height="260" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
                           <defs>
@@ -2219,6 +2523,8 @@ export default function App() {
     );
   };
 
+  const userDisplayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
+
   return (
     <div className="min-h-screen w-full bg-slate-950 flex flex-col items-center justify-start p-2 sm:p-4 text-slate-800 font-['Inter',sans-serif] antialiased selection:bg-sky-100 selection:text-sky-900 print:bg-white print:p-0 print:m-0 print:min-h-0">
       
@@ -2240,7 +2546,7 @@ export default function App() {
         style={{ width: '96%', maxWidth: '1820px' }}
       >
         
-        {/* Main Top Header */}
+        {/* Main Top Header with Profile and Logout */}
         <header className="w-full px-6 sm:px-8 py-5 border-b border-slate-100 bg-white sticky top-0 z-30 flex items-center justify-between print:hidden">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentScreen('HUB')}>
             <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
@@ -2256,12 +2562,35 @@ export default function App() {
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-normal mt-0.5">
-                Cálculo em tempo real & sincronização em nuvem
+                Cálculo em tempo real & sincronização segura por usuário
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* User Profile Chip */}
+            <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl py-1.5 px-3">
+              <div className="w-7 h-7 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs uppercase shadow-2xs">
+                {userDisplayName.charAt(0)}
+              </div>
+              <div className="hidden sm:block text-left">
+                <span className="text-xs font-bold text-slate-800 block leading-none">
+                  {userDisplayName}
+                </span>
+                <span className="text-[10px] text-slate-400 block leading-tight truncate max-w-[130px]">
+                  {user?.email}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-xl transition-all cursor-pointer ml-1"
+                title="Sair da Conta"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+
             {currentScreen === 'DETAIL' && (
               <button 
                 type="button"
