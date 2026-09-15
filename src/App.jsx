@@ -75,6 +75,21 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
     usadosCaptados: 0
   };
 
+  // Detecta se a URL atual contém os parâmetros de recuperação do Supabase
+  const getInitialRecoveryToken = () => {
+    if (typeof window === 'undefined') return null;
+    const hash = window.location.hash;
+    if (hash && (hash.includes('type=recovery') || hash.includes('access_token='))) {
+      const params = new URLSearchParams(hash.replace(/^#/, ''));
+      if (params.get('type') === 'recovery' || params.get('access_token')) {
+        return params.get('access_token');
+      }
+    }
+    return null;
+  };
+
+  const initialRecoveryToken = getInitialRecoveryToken();
+
   const getErrorMessage = async (res) => {
     try {
       const json = await res.json();
@@ -390,11 +405,11 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
     }, [session]);
 
     const [user, setUser] = useState(() => session?.user || null);
-    const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'forgot' | 'resetPassword'
+    const [recoveryToken, setRecoveryToken] = useState(initialRecoveryToken);
+    const [authMode, setAuthMode] = useState(initialRecoveryToken ? 'resetPassword' : 'login'); // 'login' | 'signup' | 'forgot' | 'resetPassword'
     const [authLoading, setAuthLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [recoveryToken, setRecoveryToken] = useState(null);
 
     const [authForm, setAuthForm] = useState({
       name: '',
@@ -414,24 +429,27 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
       setTimeout(() => setToast(null), 4000);
     }, []);
 
-    // Detect recovery token in URL hash on initial load
+    // Limpeza segura da URL e ativação imediata do modo de redefinição de senha
     useEffect(() => {
-      try {
-        const hash = window.location.hash;
-        if (hash && hash.includes('type=recovery')) {
-          const params = new URLSearchParams(hash.substring(1));
-          const recoveryAccessToken = params.get('access_token');
-          if (recoveryAccessToken) {
-            setRecoveryToken(recoveryAccessToken);
-            setAuthMode('resetPassword');
-            window.history.replaceState(null, '', window.location.pathname);
-            showNotification('Link de recuperação validado. Defina sua nova senha.');
-          }
-        }
-      } catch (e) {
-        console.warn('Erro ao processar hash de recuperação:', e);
+      if (recoveryToken) {
+        setAuthMode('resetPassword');
+        window.history.replaceState(null, '', window.location.pathname);
+        showNotification('Link de recuperação validado. Defina sua nova senha.');
       }
-    }, [showNotification]);
+
+      const handleHash = () => {
+        const token = getInitialRecoveryToken();
+        if (token) {
+          setRecoveryToken(token);
+          setAuthMode('resetPassword');
+          window.history.replaceState(null, '', window.location.pathname);
+          showNotification('Link de recuperação validado. Defina sua nova senha.');
+        }
+      };
+
+      window.addEventListener('hashchange', handleHash);
+      return () => window.removeEventListener('hashchange', handleHash);
+    }, [recoveryToken, showNotification]);
 
     const refreshSessionToken = useCallback(async () => {
       const currentRefresh = sessionRef.current?.refresh_token;
