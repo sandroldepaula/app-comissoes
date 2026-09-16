@@ -22,7 +22,7 @@ import {
   Calendar, 
   Target, 
   ChevronRight, 
-  ChevronDown,
+  ChevronDown, 
   ChevronUp,
   AlertTriangle,
   User,
@@ -32,7 +32,11 @@ import {
   Lock,
   Mail,
   Loader2,
-  KeyRound
+  KeyRound,
+  SlidersHorizontal,
+  Wallet,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://hhmtsvicjtqydrjvacze.supabase.co';
@@ -238,7 +242,8 @@ const useInjectGoogleFont = () => {
   }, []);
 };
 
-const CurrencyInput = ({ value, onChange, className, placeholder, disabled }) => {
+const CurrencyInput = ({ value, onChange, className, placeholder, disabled, theme = 'dark' }) => {
+  const isDark = theme === 'dark';
   const displayValue = useMemo(() => {
     if (value === 0 && !disabled) return '';
     if (value === undefined || value === null) return '';
@@ -259,7 +264,11 @@ const CurrencyInput = ({ value, onChange, className, placeholder, disabled }) =>
       onChange={handleChange}
       disabled={disabled}
       placeholder={placeholder || "R$ 0,00"}
-      className={`bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[7.8px] print:font-semibold print:text-slate-900 print:text-right print:shadow-none print:h-auto print:w-full print:min-w-0 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className || ''}`}
+      className={`${
+        isDark
+          ? 'bg-slate-950/70 hover:bg-slate-900/80 focus:bg-slate-900 border-slate-800 text-slate-100 placeholder:text-slate-600'
+          : 'bg-slate-50/70 hover:bg-white focus:bg-white border-slate-200 text-slate-800 placeholder:text-slate-400'
+      } border text-xs font-medium font-mono rounded-xl px-2.5 py-1.5 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.8px] print:font-semibold print:text-slate-900 print:text-right print:shadow-none print:h-auto print:w-full print:min-w-0 ${disabled ? 'opacity-40 cursor-not-allowed' : ''} ${className || ''}`}
     />
   );
 };
@@ -389,7 +398,24 @@ const computeMonthMetrics = (salesList = [], extrasObj = DEFAULT_EXTRAS, netPct 
 export default function App() {
   useInjectGoogleFont();
 
-  // Authentication State
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('auto_app_theme') || 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
+
+  const isDark = theme === 'dark';
+
+  const toggleTheme = useCallback(() => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    try {
+      localStorage.setItem('auto_app_theme', nextTheme);
+    } catch (e) {}
+  }, [theme]);
+
   const [session, setSession] = useState(() => {
     try {
       const stored = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -535,6 +561,7 @@ export default function App() {
   });
 
   const [isSalesCollapsed, setIsSalesCollapsed] = useState(false);
+  const [expandedMobileCardId, setExpandedMobileCardId] = useState(null);
   const [activeDonutSlice, setActiveDonutSlice] = useState(null);
   const [activeModelBar, setActiveModelBar] = useState(null);
   const [newSale, setNewSale] = useState(DEFAULT_SALE);
@@ -672,7 +699,7 @@ export default function App() {
         throw new Error(errorDesc);
       }
 
-      showNotification('Link de recuperação enviado para o seu e-mail! Verifique sua caixa de entrada e spam.');
+      showNotification('Link de recuperação enviado para o seu e-mail!');
       setAuthMode('login');
     } catch (err) {
       showNotification(err.message || 'Erro ao enviar e-mail de recuperação', 'error');
@@ -696,7 +723,7 @@ export default function App() {
       return;
     }
     if (!recoveryToken) {
-      showNotification('Token de recuperação expirado ou ausente. Solicite um novo link.', 'error');
+      showNotification('Token de recuperação expirado ou ausente.', 'error');
       setAuthMode('forgot');
       return;
     }
@@ -962,17 +989,17 @@ export default function App() {
 
   const grossCommissionSlices = useMemo(() => {
     const rawSlices = [
-      { id: 'vn', label: 'Comissão VN', shortLabel: 'VN', value: metrics.commissionVn, color: '#0284C7' },
-      { id: 'margem', label: 'Comissão Margem', shortLabel: 'Margem', value: metrics.commissionMargin, color: '#0EA5E9' },
-      { id: 'retorno', label: 'Retorno F&I', shortLabel: 'Retorno F&I', value: metrics.commissionRetornoFAndI, color: '#6366F1' },
-      { id: 'spf', label: 'Comissão SPF', shortLabel: 'SPF', value: metrics.commissionSpf, color: '#8B5CF6' },
-      { id: 'acessorios', label: 'Comissão Acessórios', shortLabel: 'Acessórios', value: metrics.commissionAcc, color: '#EC4899' },
-      { id: 'autobox', label: 'Comissão Autobox', shortLabel: 'Autobox', value: metrics.commissionAutobox, color: '#F43F5E' },
-      { id: 'emplacamento', label: 'Comissão Emplacamento', shortLabel: 'Emplacamento', value: metrics.commissionEmp, color: '#F97316' },
-      { id: 'seguro', label: 'Seguros', shortLabel: 'Seguro', value: metrics.seguroTotal, color: '#EAB308' },
-      { id: 'bonus_usados', label: 'Bônus Carro + Usados C.', shortLabel: 'Bônus / Usados', value: metrics.bonusCarroTotal + metrics.usadosCaptadosTotal, color: '#10B981' },
-      { id: 'dsr', label: 'DSR (20%)', shortLabel: 'DSR (20%)', value: metrics.dsr, color: '#14B8A6' },
-      { id: 'extras', label: 'Lançamentos Extras', shortLabel: 'Extras', value: metrics.extrasTotal, color: '#3B82F6' },
+      { id: 'vn', label: 'Comissão VN', shortLabel: 'VN', value: metrics.commissionVn, color: '#38bdf8' },
+      { id: 'margem', label: 'Comissão Margem', shortLabel: 'Margem', value: metrics.commissionMargin, color: '#0ea5e9' },
+      { id: 'retorno', label: 'Retorno F&I', shortLabel: 'Retorno F&I', value: metrics.commissionRetornoFAndI, color: '#6366f1' },
+      { id: 'spf', label: 'Comissão SPF', shortLabel: 'SPF', value: metrics.commissionSpf, color: '#8b5cf6' },
+      { id: 'acessorios', label: 'Comissão Acessórios', shortLabel: 'Acessórios', value: metrics.commissionAcc, color: '#ec4899' },
+      { id: 'autobox', label: 'Comissão Autobox', shortLabel: 'Autobox', value: metrics.commissionAutobox, color: '#f43f5e' },
+      { id: 'emplacamento', label: 'Comissão Emplacamento', shortLabel: 'Emplacamento', value: metrics.commissionEmp, color: '#f97316' },
+      { id: 'seguro', label: 'Seguros', shortLabel: 'Seguro', value: metrics.seguroTotal, color: '#eab308' },
+      { id: 'bonus_usados', label: 'Bônus Carro + Usados C.', shortLabel: 'Bônus / Usados', value: metrics.bonusCarroTotal + metrics.usadosCaptadosTotal, color: '#10b981' },
+      { id: 'dsr', label: 'DSR (20%)', shortLabel: 'DSR (20%)', value: metrics.dsr, color: '#14b8a6' },
+      { id: 'extras', label: 'Lançamentos Extras', shortLabel: 'Extras', value: metrics.extrasTotal, color: '#06b6d4' },
     ];
 
     const valid = rawSlices.filter(slice => slice.value > 0.009);
@@ -1228,52 +1255,90 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-4 font-['Inter',sans-serif] antialiased selection:bg-sky-500 selection:text-white">
+      <div className={`min-h-screen w-full flex items-center justify-center p-4 font-['Inter',sans-serif] antialiased relative overflow-hidden transition-colors duration-200 selection:bg-sky-500/30 selection:text-sky-200 ${
+        isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-800'
+      }`}>
+        
+        {/* Floating Theme Toggle in Auth Screen */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={`Mudar para Modo ${isDark ? 'Claro' : 'Escuro'}`}
+          title={`Mudar para Modo ${isDark ? 'Claro' : 'Escuro'}`}
+          className={`fixed top-5 right-5 z-50 p-2.5 rounded-2xl border transition-all cursor-pointer shadow-lg active:scale-95 ${
+            isDark
+              ? 'bg-slate-900/90 border-slate-800 text-amber-400 hover:bg-slate-800 hover:text-amber-300 hover:border-slate-700'
+              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300'
+          }`}
+        >
+          {isDark ? <Sun size={19} strokeWidth={2.2} /> : <Moon size={19} strokeWidth={2.2} />}
+        </button>
+
+        {/* Subtle radial depth gradient in background */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+
         {toast && (
-          <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all duration-300 animate-in fade-in slide-in-from-bottom-3 ${
+          <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border text-sm font-medium transition-all duration-300 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 ${
             toast.type === 'error' 
-              ? 'bg-rose-50 border-rose-200 text-rose-800' 
-              : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              ? 'bg-rose-950/80 border-rose-800/80 text-rose-200 shadow-rose-950/50' 
+              : 'bg-emerald-950/80 border-emerald-800/80 text-emerald-200 shadow-emerald-950/50'
           }`}>
-            <CheckCircle2 size={18} className={toast.type === 'error' ? 'text-rose-600' : 'text-emerald-600'} />
+            <CheckCircle2 size={18} className={toast.type === 'error' ? 'text-rose-400' : 'text-emerald-400'} />
             <span>{toast.text}</span>
           </div>
         )}
 
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-slate-200/80 animate-in zoom-in-95 duration-200">
+        <div className={`w-full max-w-md rounded-3xl shadow-2xl p-8 border transition-all duration-200 animate-in zoom-in-95 relative z-10 ${
+          isDark 
+            ? 'bg-slate-900/90 backdrop-blur-2xl border-slate-800/90 border-t border-t-white/10 shadow-black/80 text-slate-100' 
+            : 'bg-white border-slate-200/90 shadow-slate-300/40 text-slate-800'
+        }`}>
+          
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center mb-3 shadow-xs">
+            <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center mb-3 shadow-inner text-sky-500 ${
+              isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
+            }`}>
               {authMode === 'resetPassword' ? (
-                <KeyRound size={26} strokeWidth={2.2} />
+                <KeyRound size={24} strokeWidth={2} />
               ) : (
-                <Car size={26} strokeWidth={2.2} />
+                <Car size={24} strokeWidth={2} />
               )}
             </div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">
+            
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-500 text-[10px] font-semibold uppercase tracking-wider mb-2">
+              Plataforma Comercial Next-Gen
+            </div>
+
+            <h1 className={`text-xl font-black tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               {authMode === 'forgot'
                 ? 'Recuperar Senha'
                 : authMode === 'resetPassword'
                 ? 'Definir Nova Senha'
                 : 'Gestão & Comissões Auto'}
             </h1>
-            <p className="text-xs text-slate-500 mt-1 max-w-xs leading-relaxed">
+            <p className={`text-xs mt-1 max-w-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {authMode === 'forgot'
                 ? 'Digite seu e-mail cadastrado para enviarmos as instruções de redefinição.'
                 : authMode === 'resetPassword'
                 ? 'Crie uma nova senha de no mínimo 6 caracteres para sua conta.'
-                : 'Plataforma comercial com sincronização em nuvem e isolamento seguro de dados.'}
+                : 'Controle comercial executivo com criptografia e isolamento seguro de dados.'}
             </p>
           </div>
 
           {(authMode === 'login' || authMode === 'signup') && (
-            <div className="flex rounded-2xl bg-slate-100 p-1 mb-6">
+            <div className={`flex rounded-2xl p-1 mb-6 border ${
+              isDark ? 'bg-slate-950/80 border-slate-800/80' : 'bg-slate-100 border-slate-200'
+            }`}>
               <button
                 type="button"
                 onClick={() => setAuthMode('login')}
                 className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
                   authMode === 'login'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? isDark
+                      ? 'bg-slate-800 text-sky-400 shadow-md border border-slate-700/80'
+                      : 'bg-white text-sky-600 shadow-md border border-slate-200'
+                    : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Acessar Conta
@@ -1283,8 +1348,10 @@ export default function App() {
                 onClick={() => setAuthMode('signup')}
                 className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
                   authMode === 'signup'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-900'
+                    ? isDark
+                      ? 'bg-slate-800 text-sky-400 shadow-md border border-slate-700/80'
+                      : 'bg-white text-sky-600 shadow-md border border-slate-200'
+                    : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Criar Conta
@@ -1295,11 +1362,11 @@ export default function App() {
           {authMode === 'forgot' ? (
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   E-mail Cadastrado
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                     <Mail size={16} />
                   </div>
                   <input
@@ -1308,7 +1375,11 @@ export default function App() {
                     value={authForm.email}
                     onChange={(e) => setAuthForm(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="seuemail@exemplo.com"
-                    className="w-full pl-10 pr-3 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                    className={`w-full pl-10 pr-3 py-2.5 border text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                      isDark
+                        ? 'bg-slate-950/80 border-slate-800 text-slate-100 placeholder:text-slate-600'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                    }`}
                   />
                 </div>
               </div>
@@ -1316,7 +1387,7 @@ export default function App() {
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs py-3 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/25 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full mt-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-3 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {authLoading ? (
                   <>
@@ -1332,7 +1403,9 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setAuthMode('login')}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-sky-600 transition-colors"
+                  className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                    isDark ? 'text-slate-400 hover:text-sky-400' : 'text-slate-500 hover:text-sky-600'
+                  }`}
                 >
                   <ArrowLeft size={14} />
                   <span>Voltar ao Login</span>
@@ -1342,11 +1415,11 @@ export default function App() {
           ) : authMode === 'resetPassword' ? (
             <form onSubmit={handleUpdatePassword} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Nova Senha
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                     <Lock size={16} />
                   </div>
                   <input
@@ -1356,12 +1429,16 @@ export default function App() {
                     value={resetPasswordForm.newPassword}
                     onChange={(e) => setResetPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                    className={`w-full pl-10 pr-10 py-2.5 border text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                      isDark
+                        ? 'bg-slate-950/80 border-slate-800 text-slate-100 placeholder:text-slate-600'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(p => !p)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -1369,11 +1446,11 @@ export default function App() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Confirmar Nova Senha
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                     <Lock size={16} />
                   </div>
                   <input
@@ -1383,12 +1460,16 @@ export default function App() {
                     value={resetPasswordForm.confirmPassword}
                     onChange={(e) => setResetPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     placeholder="Repita a nova senha"
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                    className={`w-full pl-10 pr-10 py-2.5 border text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                      isDark
+                        ? 'bg-slate-950/80 border-slate-800 text-slate-100 placeholder:text-slate-600'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(p => !p)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
                   >
                     {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -1398,7 +1479,7 @@ export default function App() {
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs py-3 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/25 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full mt-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-3 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {authLoading ? (
                   <>
@@ -1414,7 +1495,9 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setAuthMode('login')}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-sky-600 transition-colors"
+                  className={`inline-flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                    isDark ? 'text-slate-400 hover:text-sky-400' : 'text-slate-500 hover:text-sky-600'
+                  }`}
                 >
                   <ArrowLeft size={14} />
                   <span>Voltar ao Login</span>
@@ -1425,11 +1508,11 @@ export default function App() {
             <form onSubmit={authMode === 'login' ? handleLogin : handleSignUp} className="space-y-4">
               {authMode === 'signup' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                     Nome Completo
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                       <User size={16} />
                     </div>
                     <input
@@ -1438,18 +1521,22 @@ export default function App() {
                       value={authForm.name}
                       onChange={(e) => setAuthForm(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Ex: João da Silva"
-                      className="w-full pl-10 pr-3 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                      className={`w-full pl-10 pr-3 py-2.5 border text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                        isDark
+                          ? 'bg-slate-950/80 border-slate-800 text-slate-100 placeholder:text-slate-600'
+                          : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   E-mail Corporativo ou Pessoal
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                     <Mail size={16} />
                   </div>
                   <input
@@ -1458,28 +1545,32 @@ export default function App() {
                     value={authForm.email}
                     onChange={(e) => setAuthForm(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="seuemail@exemplo.com"
-                    className="w-full pl-10 pr-3 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                    className={`w-full pl-10 pr-3 py-2.5 border text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                      isDark
+                        ? 'bg-slate-950/80 border-slate-800 text-slate-100 placeholder:text-slate-600'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                    }`}
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">
+                  <label className={`block text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                     Senha de Acesso
                   </label>
                   {authMode === 'login' && (
                     <button
                       type="button"
                       onClick={() => setAuthMode('forgot')}
-                      className="text-xs font-semibold text-sky-600 hover:text-sky-700 hover:underline cursor-pointer"
+                      className="text-xs font-medium text-sky-500 hover:text-sky-400 hover:underline cursor-pointer"
                     >
                       Esqueceu a senha?
                     </button>
                   )}
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                     <Lock size={16} />
                   </div>
                   <input
@@ -1489,12 +1580,16 @@ export default function App() {
                     value={authForm.password}
                     onChange={(e) => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                    className={`w-full pl-10 pr-10 py-2.5 border text-xs font-medium rounded-xl transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                      isDark
+                        ? 'bg-slate-950/80 border-slate-800 text-slate-100 placeholder:text-slate-600'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(p => !p)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -1504,7 +1599,7 @@ export default function App() {
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full mt-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs py-3 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/25 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full mt-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-3 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {authLoading ? (
                   <>
@@ -1518,7 +1613,9 @@ export default function App() {
             </form>
           )}
 
-          <div className="mt-6 pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
+          <div className={`mt-6 pt-4 border-t text-center text-[11px] ${
+            isDark ? 'border-slate-800/80 text-slate-500' : 'border-slate-200 text-slate-400'
+          }`}>
             <span>Seus dados comerciais são protegidos por criptografia e RLS.</span>
           </div>
         </div>
@@ -1528,28 +1625,37 @@ export default function App() {
 
   const renderHubScreen = () => {
     return (
-      <div className="w-full px-6 sm:px-8 py-8 space-y-8 animate-in fade-in duration-200">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-3xl p-6 md:p-8 shadow-sm">
-          <div>
+      <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-8 py-8 space-y-8 animate-in fade-in duration-200">
+        {/* Hub Welcome Banner with Controlled Depth */}
+        <div className={`flex flex-col md:flex-row md:items-center justify-between gap-6 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden transition-colors ${
+          isDark
+            ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 shadow-black/50 text-slate-100'
+            : 'bg-white border border-slate-200/90 shadow-slate-200 text-slate-800'
+        }`}>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-sky-500 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
                 Multi-Competência
               </span>
-              <span className="text-xs text-slate-400 font-medium">Gestão Comercial Automotiva</span>
+              <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Gestão Comercial Automotiva
+              </span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight mt-2">
+            <h2 className={`text-2xl md:text-3xl font-black tracking-tight mt-2.5 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               Competências Comerciais
             </h2>
-            <p className="text-xs md:text-sm text-slate-500 mt-1 max-w-xl">
-              Gerencie seus meses de faturamento, visualize comparativos de desempenho e acompanhe a evolução das comissões em qualquer dispositivo.
+            <p className={`text-xs md:text-sm mt-1 max-w-xl leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              Monitore seus fechamentos mensais, acompanhe o atingimento de metas e apure previsões líquidas com precisão.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative z-10">
             <button
               type="button"
               onClick={() => setIsCreateMonthOpen(true)}
-              className="inline-flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs md:text-sm px-5 py-3 rounded-2xl transition-all duration-150 shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs md:text-sm px-5 py-3 rounded-2xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer"
             >
               <Plus size={18} strokeWidth={2.5} />
               <span>Criar Novo Mês</span>
@@ -1557,22 +1663,29 @@ export default function App() {
           </div>
         </div>
 
+        {/* Competencies Grid */}
         {months.length === 0 ? (
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-12 text-center shadow-sm">
+          <div className={`rounded-3xl p-12 text-center shadow-2xl transition-colors ${
+            isDark
+              ? 'bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10'
+              : 'bg-white border border-slate-200/90 shadow-slate-200'
+          }`}>
             <div className="max-w-md mx-auto flex flex-col items-center">
-              <div className="w-16 h-16 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-4 border border-sky-100">
+              <div className={`w-16 h-16 rounded-2xl border text-sky-500 flex items-center justify-center mb-4 shadow-inner ${
+                isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
+              }`}>
                 <Calendar size={32} strokeWidth={1.8} />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+              <h3 className={`text-lg font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                 Nenhum mês de competência cadastrado
               </h3>
-              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                Comece criando sua primeira competência (ex: Setembro / 2026). Todos os lançamentos de vendas e cálculos de comissões serão sincronizados diretamente na nuvem.
+              <p className={`text-xs mt-1.5 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Comece criando sua primeira competência. Todos os lançamentos de vendas e cálculos de comissões serão sincronizados diretamente na nuvem.
               </p>
               <button
                 type="button"
                 onClick={() => setIsCreateMonthOpen(true)}
-                className="mt-6 inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/20 cursor-pointer"
+                className="mt-6 inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2.2} />
                 <span>Criar Primeiro Mês</span>
@@ -1589,20 +1702,26 @@ export default function App() {
               return (
                 <div 
                   key={m.id}
-                  className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
+                  className={`rounded-3xl p-6 shadow-2xl transition-all duration-200 flex flex-col justify-between group relative overflow-hidden ${
+                    isDark
+                      ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/90 border-t border-t-white/10 shadow-black/50 hover:border-slate-700/90 hover:shadow-sky-500/5'
+                      : 'bg-white border border-slate-200/90 shadow-slate-200 hover:shadow-lg hover:border-slate-300'
+                  }`}
                 >
                   <div className="space-y-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100 group-hover:scale-105 transition-transform">
+                        <div className={`w-11 h-11 rounded-2xl border text-sky-500 flex items-center justify-center group-hover:scale-105 transition-transform shadow-inner ${
+                          isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
+                        }`}>
                           <Calendar size={22} />
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                          <h3 className={`text-lg font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                             {m.mes} / {m.ano}
                           </h3>
-                          <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                            <Target size={12} />
+                          <div className={`flex items-center gap-2 text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            <Target size={12} className="text-sky-500" />
                             <span>Meta: {m.meta} veículos</span>
                           </div>
                         </div>
@@ -1615,7 +1734,11 @@ export default function App() {
                             e.stopPropagation();
                             handleOpenEditMonth(m);
                           }}
-                          className="text-slate-400 hover:text-sky-600 hover:bg-sky-50 p-2 rounded-xl transition-colors cursor-pointer"
+                          className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                            isDark
+                              ? 'text-slate-400 hover:text-sky-400 hover:bg-slate-800/60'
+                              : 'text-slate-400 hover:text-sky-600 hover:bg-slate-100'
+                          }`}
                           title="Editar Competência"
                         >
                           <Pencil size={16} />
@@ -1627,7 +1750,7 @@ export default function App() {
                             e.stopPropagation();
                             setMonthToDelete(m);
                           }}
-                          className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-xl transition-colors cursor-pointer"
+                          className="text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 p-2 rounded-xl transition-colors cursor-pointer"
                           title="Excluir Mês"
                         >
                           <Trash2 size={16} />
@@ -1637,60 +1760,72 @@ export default function App() {
 
                     <div className="space-y-1.5 pt-1">
                       <div className="flex items-center justify-between text-xs font-medium">
-                        <span className="text-slate-500">Progresso da Meta</span>
-                        <span className="text-slate-800 font-bold">{mMetrics.volume} / {m.meta} ({metaProgress.toFixed(0)}%)</span>
+                        <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Progresso da Meta</span>
+                        <span className={`font-bold tabular-nums ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                          {mMetrics.volume} / {m.meta} ({metaProgress.toFixed(0)}%)
+                        </span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden p-[1px]">
+                      <div className={`w-full rounded-full h-2 overflow-hidden border p-[1px] ${
+                        isDark ? 'bg-slate-950 border-slate-800/80' : 'bg-slate-100 border-slate-200'
+                      }`}>
                         <div 
-                          className="h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-600 transition-all duration-300"
+                          className="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-400 transition-all duration-300 shadow-xs"
                           style={{ width: `${metaProgress}%` }}
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 pt-2">
-                      <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
+                      <div className={`border rounded-2xl p-3 shadow-inner ${
+                        isDark ? 'bg-slate-950/60 border-slate-800/70' : 'bg-slate-50 border-slate-200'
+                      }`}>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">
                           Volume Faturado
                         </span>
-                        <span className="text-base font-extrabold text-slate-900 mt-0.5 block">
+                        <span className={`text-base font-extrabold mt-0.5 block tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {mMetrics.volume} {mMetrics.volume === 1 ? 'carro' : 'carros'}
                         </span>
                       </div>
 
-                      <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
+                      <div className={`border rounded-2xl p-3 shadow-inner ${
+                        isDark ? 'bg-slate-950/60 border-slate-800/70' : 'bg-slate-50 border-slate-200'
+                      }`}>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 block">
                           Comissão Bruta
                         </span>
-                        <span className="text-base font-extrabold text-slate-900 mt-0.5 block">
+                        <span className={`text-base font-extrabold mt-0.5 block tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                           {formatBRL(mMetrics.grossCommission)}
                         </span>
                       </div>
                     </div>
 
-                    <div className="bg-gradient-to-br from-slate-900 to-sky-950 text-white rounded-2xl p-4 flex items-center justify-between shadow-xs">
+                    <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950/60 border border-sky-500/20 text-white rounded-2xl p-4 flex items-center justify-between shadow-xl">
                       <div>
-                        <span className="text-[10px] font-semibold text-sky-300 uppercase tracking-wider block">
+                        <span className="text-[10px] font-semibold text-sky-400 uppercase tracking-wider block">
                           Líquido Previsto
                         </span>
-                        <span className="text-xl font-extrabold text-sky-400 tracking-tight">
+                        <span className="text-xl font-black text-sky-300 tracking-tight tabular-nums">
                           {formatBRL(mMetrics.netCommission)}
                         </span>
                       </div>
-                      <span className="text-[11px] font-bold text-sky-200 bg-white/10 px-2 py-0.5 rounded-lg border border-white/10">
+                      <span className="text-[11px] font-bold text-sky-300 bg-sky-500/10 px-2 py-0.5 rounded-lg border border-sky-500/20">
                         {m.netPercentage ?? 69}%
                       </span>
                     </div>
                   </div>
 
-                  <div className="pt-5 mt-4 border-t border-slate-100">
+                  <div className={`pt-5 mt-4 border-t ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
                     <button
                       type="button"
                       onClick={() => {
                         setSelectedMonthId(m.id);
                         setCurrentScreen('DETAIL');
                       }}
-                      className="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-sky-50 text-slate-800 hover:text-sky-700 font-semibold text-xs px-4 py-2.5 rounded-xl transition-all duration-150 cursor-pointer"
+                      className={`w-full flex items-center justify-center gap-2 font-bold text-xs px-4 py-2.5 rounded-xl border transition-all duration-150 cursor-pointer ${
+                        isDark
+                          ? 'bg-slate-800/80 hover:bg-slate-800 hover:text-sky-300 text-slate-200 border-slate-700/60'
+                          : 'bg-slate-100 hover:bg-slate-200 hover:text-sky-700 text-slate-700 border-slate-200'
+                      }`}
                     >
                       <span>Acessar Lançamentos</span>
                       <ChevronRight size={15} />
@@ -1709,39 +1844,66 @@ export default function App() {
     if (!activeMonth) return null;
 
     return (
-      <div className="w-full space-y-0 print:space-y-0 animate-in fade-in duration-200">
+      <div className="w-full max-w-[1720px] mx-auto space-y-6 print:space-y-0 animate-in fade-in duration-200">
         
         {/* Navigation Bar for Selected Month */}
-        <div className="w-full px-6 sm:px-8 pt-6 print:hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-4 px-6 shadow-sm">
-            <div className="flex items-center gap-3">
+        <div className="w-full px-4 sm:px-8 pt-4 sm:pt-6 print:hidden">
+          <div className={`rounded-2xl p-4 sm:px-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+            isDark
+              ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 shadow-black/40 text-slate-100'
+              : 'bg-white border border-slate-200/80 shadow-slate-200 text-slate-800'
+          }`}>
+            <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setCurrentScreen('HUB')}
-                className="inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/70 font-semibold text-xs px-3.5 py-2 rounded-xl transition-all cursor-pointer"
+                className={`inline-flex items-center gap-1.5 font-semibold text-xs px-3.5 py-2 rounded-xl border transition-all cursor-pointer shrink-0 ${
+                  isDark
+                    ? 'text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border-slate-700/60'
+                    : 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border-slate-200'
+                }`}
               >
                 <ArrowLeft size={15} />
                 <span>Voltar para Meses</span>
               </button>
-              <div className="h-5 w-px bg-slate-200 hidden sm:block" />
-              <div>
-                <span className="text-xs text-slate-400 block font-medium">Competência Ativa</span>
-                <h2 className="text-base font-bold text-slate-900 tracking-tight">
+
+              {/* Mobile Meta Badge */}
+              <div className={`sm:hidden flex items-center gap-1.5 text-xs rounded-xl px-3 py-1.5 font-medium shrink-0 border ${
+                isDark ? 'text-slate-300 bg-slate-950/80 border-slate-800' : 'text-slate-700 bg-slate-50 border-slate-200'
+              }`}>
+                <Target size={13} className="text-sky-500" />
+                <span>Meta: <strong className={isDark ? 'text-white font-bold' : 'text-slate-900 font-bold'}>{activeMonth.meta}</strong></span>
+              </div>
+
+              <div className={`h-5 w-px hidden sm:block ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+              
+              <div className="hidden sm:block">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">Competência Ativa</span>
+                <h2 className={`text-base font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                   {activeMonth.mes} / {activeMonth.ano}
                 </h2>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2 font-medium">
-                <Target size={14} className="text-sky-600" />
-                <span>Meta: <strong>{activeMonth.meta}</strong> veículos</span>
-              </div>
+            {/* Mobile Competency Title */}
+            <div className={`sm:hidden pt-1 border-t ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
+              <span className="text-[10px] text-slate-500 block font-semibold uppercase tracking-wider">Competência Ativa</span>
+              <h2 className={`text-lg font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                {activeMonth.mes} / {activeMonth.ano}
+              </h2>
+            </div>
+
+            {/* Desktop Meta Badge */}
+            <div className={`hidden sm:flex items-center gap-2 text-xs rounded-xl px-3.5 py-2 font-medium shrink-0 shadow-inner border ${
+              isDark ? 'text-slate-300 bg-slate-950/80 border-slate-800' : 'text-slate-700 bg-slate-50 border-slate-200'
+            }`}>
+              <Target size={14} className="text-sky-500" />
+              <span>Meta: <strong className={isDark ? 'text-white font-bold' : 'text-slate-900 font-bold'}>{activeMonth.meta}</strong> veículos</span>
             </div>
           </div>
         </div>
 
-        {/* Print Executive Header */}
+        {/* Print Executive Header (strictly for @media print) */}
         <div className="hidden print:flex items-center justify-between border-b border-slate-300 pb-2 mb-2.5 text-slate-900">
           <div className="flex items-baseline gap-2.5">
             <h1 className="text-sm font-black tracking-tight text-slate-900 leading-none">
@@ -1764,10 +1926,9 @@ export default function App() {
           </div>
         </div>
 
-        {/* Print Top Metric Cards */}
+        {/* Print Top Metric Cards (strictly for @media print) */}
         <div className="hidden print:grid print:grid-cols-4 print:gap-3 print:mb-2.5 print-avoid-break">
-          
-          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between shadow-none">
+          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider">
                 Volume Total & Faixa VN
@@ -1789,7 +1950,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between shadow-none">
+          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider">
                 DSR (20%)
@@ -1809,7 +1970,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between shadow-none">
+          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider">
                 Comissão Bruta
@@ -1830,7 +1991,7 @@ export default function App() {
           </div>
 
           <div 
-            className="bg-slate-900 text-white rounded-xl p-3 border border-slate-800 flex flex-col justify-between print-dark-card shadow-none"
+            className="bg-slate-900 text-white rounded-xl p-3 border border-slate-800 flex flex-col justify-between print-dark-card"
             style={{ backgroundColor: '#0f172a', color: '#ffffff', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
           >
             <div className="flex items-center justify-between">
@@ -1857,7 +2018,7 @@ export default function App() {
         <div className="hidden print:flex items-center justify-between border border-slate-300 rounded-xl bg-slate-50/90 p-2 px-3 mb-2.5 text-[9.5px] text-slate-800 print-avoid-break">
           <div className="flex items-center gap-3">
             <span className="font-bold text-slate-900 uppercase tracking-wider text-[8px] bg-slate-200/90 px-1.5 py-0.5 rounded">
-              Prêmios Extras:
+              Premiações do mês:
             </span>
             <span>Usados: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioUsados)}</strong></span>
             <span>Águia: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioAguia)}</strong></span>
@@ -1869,46 +2030,71 @@ export default function App() {
           </div>
         </div>
 
-        {/* Screen: Overview 3 Main Cards */}
+        {/* 1. SEÇÃO: VISÃO GERAL DO MÊS (3 CARDS PRINCIPAIS) */}
         <section className="w-full print:hidden">
-          <div className="w-full px-6 sm:px-8 pt-6 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
+          <div className="w-full px-4 sm:px-8 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <h2 className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               Visão Geral do Mês
             </h2>
-            <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
-              <Sparkles size={14} className="text-sky-600" />
+            <div className={`flex items-center gap-1.5 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <Sparkles size={14} className="text-sky-500" />
               <span>Cálculos atualizados dinamicamente</span>
             </div>
           </div>
 
-          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-6 sm:px-8 mt-4">
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200 relative overflow-hidden group">
+          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-4 sm:px-8 mt-4">
+            
+            {/* Card 1: Volume Total & Gatilho da Comissão */}
+            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 relative overflow-hidden group shadow-2xl ${
+              isDark
+                ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 shadow-black/40 hover:border-slate-700'
+                : 'bg-white border border-slate-200/90 shadow-slate-200 hover:border-slate-300'
+            }`}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-500">Volume Total & Gatilho da Comissão</span>
-                <span className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-sky-600 transition-colors">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Volume Total & Gatilho da Comissão
+                </span>
+                <span className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-colors shadow-inner ${
+                  isDark
+                    ? 'bg-slate-950 border-slate-800 text-slate-400 group-hover:text-sky-400'
+                    : 'bg-slate-50 border-slate-200 text-slate-500 group-hover:text-sky-600'
+                }`}>
                   <Layers size={16} />
                 </span>
               </div>
               <div className="mt-4 flex items-baseline gap-2.5">
-                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">{metrics.volume}</span>
-                <span className="text-sm font-medium text-slate-500">{metrics.volume === 1 ? 'veículo faturado' : 'veículos faturados'}</span>
+                <span className={`text-3xl font-black tracking-tight tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  {metrics.volume}
+                </span>
+                <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {metrics.volume === 1 ? 'veículo faturado' : 'veículos faturados'}
+                </span>
               </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium">Taxa Aplicada VN:</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80">
+              <div className={`mt-4 pt-3 border-t flex items-center justify-between text-xs ${
+                isDark ? 'border-slate-800/80' : 'border-slate-100'
+              }`}>
+                <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Taxa Aplicada VN:</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-500 border border-rose-500/30 tabular-nums">
                   {formatPercent(metrics.vnTier)}
                 </span>
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200 relative group">
+            {/* Card 2: Salário Bruto com DSR (20%) */}
+            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 relative group shadow-2xl ${
+              isDark
+                ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 shadow-black/40 hover:border-slate-700'
+                : 'bg-white border border-slate-200/90 shadow-slate-200 hover:border-slate-300'
+            }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium text-slate-500">Salário Bruto com DSR (20%)</span>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    Salário Bruto com DSR (20%)
+                  </span>
                   <button 
                     type="button"
                     onClick={() => setShowCalculationModal(true)}
-                    className="text-slate-400 hover:text-sky-600 transition-colors p-0.5 rounded-md cursor-pointer"
+                    className="text-slate-400 hover:text-sky-500 transition-colors p-0.5 rounded-md cursor-pointer"
                     title="Ver memória de cálculo"
                   >
                     <Info size={15} />
@@ -1917,7 +2103,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowCalculationModal(true)}
-                  className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center hover:bg-sky-100 transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-500 flex items-center justify-center hover:bg-sky-500/20 transition-colors cursor-pointer"
                   title="Abrir detalhamento"
                 >
                   <ArrowUpRight size={16} />
@@ -1927,31 +2113,36 @@ export default function App() {
               <div className="mt-4">
                 <span 
                   onClick={() => setShowCalculationModal(true)}
-                  className="text-3xl font-extrabold text-slate-900 tracking-tight cursor-pointer hover:text-sky-600 transition-colors"
+                  className={`text-3xl font-black tracking-tight tabular-nums cursor-pointer hover:text-sky-500 transition-colors ${
+                    isDark ? 'text-slate-100' : 'text-slate-900'
+                  }`}
                 >
                   {formatBRL(metrics.grossCommission)}
                 </span>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium">Comissões + Extras + DSR</span>
+              <div className={`mt-4 pt-3 border-t flex items-center justify-between text-xs ${
+                isDark ? 'border-slate-800/80' : 'border-slate-100'
+              }`}>
+                <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Comissões + Extras + DSR</span>
                 <button 
                   type="button"
                   onClick={() => setShowCalculationModal(true)}
-                  className="text-sky-600 hover:text-sky-700 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                  className="text-sky-500 hover:text-sky-400 font-bold inline-flex items-center gap-1 cursor-pointer"
                 >
                   Ver Detalhamento
                 </button>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950 text-white shadow-md shadow-slate-900/10 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
+            {/* Card 3: Líquido Previsto a Receber */}
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950/70 border border-sky-500/30 border-t border-t-sky-400/30 text-white shadow-2xl shadow-sky-950/30 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
               <div className="flex items-center justify-between z-10">
-                <span className="text-xs font-semibold uppercase tracking-wider text-sky-300">
+                <span className="text-xs font-semibold uppercase tracking-wider text-sky-400">
                   Líquido Previsto a Receber
                 </span>
                 
-                <div className="flex items-center bg-white/10 hover:bg-white/15 backdrop-blur-md rounded-lg border border-white/10 px-2 py-0.5">
+                <div className="flex items-center bg-slate-950/80 hover:bg-slate-950 backdrop-blur-md rounded-xl border border-slate-800 px-2 py-0.5">
                   <input
                     type="number"
                     step="0.01"
@@ -1959,36 +2150,36 @@ export default function App() {
                     max="100"
                     value={activeNetPercentage}
                     onChange={(e) => handleUpdateActiveNetPercentage(parseFloat(e.target.value) || 0)}
-                    className="w-12 bg-transparent text-white font-bold text-xs text-right focus:outline-none"
+                    className="w-12 bg-transparent text-white font-bold text-xs text-right focus:outline-none tabular-nums"
                   />
-                  <span className="text-sky-200 text-xs font-semibold ml-0.5">%</span>
+                  <span className="text-sky-400 text-xs font-bold ml-0.5">%</span>
                 </div>
               </div>
 
               <div className="mt-4 z-10">
-                <span className="text-3xl font-extrabold text-sky-400 tracking-tight">
+                <span className="text-3xl font-black text-sky-400 tracking-tight tabular-nums">
                   {formatBRL(metrics.netCommission)}
                 </span>
               </div>
 
               <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs z-10">
-                <span className="text-slate-300">Alíquota Líquida Base:</span>
-                <span className="font-semibold text-white">{activeNetPercentage.toFixed(2)}%</span>
+                <span className="text-slate-400">Alíquota Líquida Base:</span>
+                <span className="font-bold text-white tabular-nums">{activeNetPercentage.toFixed(2)}%</span>
               </div>
 
-              <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -right-6 -bottom-6 w-36 h-36 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
             </div>
           </div>
         </section>
 
-        {/* Screen: Extras Strip */}
-        <section className="w-full px-6 sm:px-8 mt-6 print:hidden">
+        {/* 2. SEÇÃO: PREMIAÇÕES DO MÊS (MINI-CARDS) */}
+        <section className="w-full px-4 sm:px-8 mt-6 print:hidden">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Resumo de Prêmios Manuais
+              Premiações do mês
             </span>
-            <span className="text-xs text-slate-500 font-medium">
-              Soma total: <strong className="text-slate-800">{formatBRL(metrics.extrasTotal)}</strong>
+            <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Soma total: <strong className={`tabular-nums ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{formatBRL(metrics.extrasTotal)}</strong>
             </span>
           </div>
 
@@ -2001,14 +2192,20 @@ export default function App() {
             ].map((p, idx) => {
               const IconComp = p.icon;
               return (
-                <div key={idx} className="bg-white border border-slate-200/80 rounded-xl p-3.5 flex items-center justify-between shadow-sm">
+                <div key={idx} className={`rounded-2xl p-3.5 flex items-center justify-between shadow-xl transition-colors ${
+                  isDark
+                    ? 'bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 text-slate-100'
+                    : 'bg-white border border-slate-200/80 text-slate-800 shadow-slate-100'
+                }`}>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center">
-                      <IconComp size={14} />
+                    <div className={`w-8 h-8 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner ${
+                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
+                    }`}>
+                      <IconComp size={15} />
                     </div>
                     <div>
-                      <span className="block text-[11px] font-medium text-slate-500 leading-none">{p.label}</span>
-                      <span className="text-sm font-semibold text-slate-900 mt-1 block">{formatBRL(p.val)}</span>
+                      <span className={`block text-[11px] font-medium leading-none ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{p.label}</span>
+                      <span className={`text-sm font-bold mt-1 block tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(p.val)}</span>
                     </div>
                   </div>
                 </div>
@@ -2017,26 +2214,302 @@ export default function App() {
           </div>
         </section>
 
-        {/* Sales Table with exact print widths */}
-        <section className="w-full px-6 sm:px-8 mt-6 print:px-0 print:mt-0 print:space-y-0 print-avoid-break">
-          <div className="flex items-center justify-between mb-3 print:hidden">
+        {/* 3. SEÇÃO: INTELIGÊNCIA COMERCIAL & ANÁLISE BI ANALYTICS (POSICIONADA ANTES DE VENDAS) */}
+        <section className="w-full print:hidden">
+          <div className="w-full px-6 sm:px-8 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div>
-              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
-                Lançamento de Vendas
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Insira os dados individuais de cada venda realizada na competência
+              <div className="flex items-center gap-2">
+                <h2 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  Inteligência Comercial & Análise BI
+                </h2>
+                <span className="bg-sky-500/10 text-sky-500 text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full border border-sky-500/20">
+                  Analytics
+                </span>
+              </div>
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Distribuição de mix de faturamento e decomposição transparente das receitas apuradas
               </p>
             </div>
+            <span className={`text-xs font-medium hidden sm:inline-block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {activeSales.length} {activeSales.length === 1 ? 'venda analisada' : 'vendas analisadas'}
+            </span>
+          </div>
+
+          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 px-6 sm:px-8 mt-4 mb-8">
             
-            <div className="flex items-center gap-3">
-              <div className="text-xs text-slate-500 font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200/80 shadow-sm">
-                Total de registros: <span className="font-bold text-slate-800">{activeSales.length}</span>
+            {/* Chart 1: Volume por Modelo */}
+            <div className={`rounded-2xl p-6 shadow-2xl transition-all duration-200 relative flex flex-col justify-between overflow-hidden ${
+              isDark
+                ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 hover:border-slate-700 text-slate-100'
+                : 'bg-white border border-slate-200/90 shadow-slate-200 hover:border-slate-300 text-slate-800'
+            }`}>
+              <div className={`flex items-start justify-between gap-3 border-b pb-4 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner ${
+                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
+                    }`}>
+                      <BarChart3 size={16} />
+                    </div>
+                    <h3 className={`text-base font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                      Volume por Modelo
+                    </h3>
+                  </div>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Ranking decrescente de unidades faturadas no período
+                  </p>
+                </div>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-xl border ${
+                  isDark ? 'bg-slate-950 text-slate-300 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200'
+                }`}>
+                  {modelVolumeData.length} {modelVolumeData.length === 1 ? 'modelo' : 'modelos'}
+                </span>
+              </div>
+
+              <div className="pt-5 pb-2 flex-1">
+                {modelVolumeData.length === 0 ? (
+                  <div className="h-56 flex flex-col items-center justify-center text-slate-500 text-xs">
+                    <Car size={28} className="mb-2 text-slate-600" />
+                    <span>Nenhum veículo lançado para análise gráfica.</span>
+                  </div>
+                ) : (
+                  <div className="min-h-[400px] max-h-[540px] overflow-y-auto pr-2 space-y-3">
+                    {modelVolumeData.map((item, idx) => {
+                      const isHovered = activeModelBar === item.model;
+                      const maxCount = modelVolumeData[0]?.count || 1;
+                      const barWidth = Math.max(8, (item.count / maxCount) * 100);
+
+                      return (
+                        <div
+                          key={item.model}
+                          onMouseEnter={() => setActiveModelBar(item.model)}
+                          onMouseLeave={() => setActiveModelBar(null)}
+                          className={`p-2.5 rounded-xl border transition-all duration-200 relative cursor-pointer ${
+                            isHovered 
+                              ? isDark ? 'bg-slate-800/80 border-sky-500/40 shadow-lg' : 'bg-sky-50 border-sky-300 shadow-md'
+                              : isDark ? 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700' : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-xs mb-1.5">
+                            <div className="flex items-center gap-2 min-w-0 pr-2">
+                              <span className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0 ${
+                                idx === 0 
+                                  ? 'bg-sky-500 text-slate-950 shadow-xs' 
+                                  : idx === 1 
+                                  ? isDark ? 'bg-slate-700 text-white' : 'bg-slate-300 text-slate-800'
+                                  : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'
+                              }`}>
+                                #{idx + 1}
+                              </span>
+                              <span className={`font-semibold truncate tracking-tight text-[13px] ${
+                                isDark ? 'text-slate-200' : 'text-slate-800'
+                              }`}>
+                                {item.model}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0 font-mono tabular-nums">
+                              <span className={`font-bold text-xs ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                                {item.count} {item.count === 1 ? 'unid.' : 'unids.'}
+                              </span>
+                              <span className="text-[11px] font-bold text-sky-500 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">
+                                {item.percentage.toFixed(1).replace('.', ',')}%
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className={`w-full rounded-full h-2 overflow-hidden border p-[1px] ${
+                            isDark ? 'bg-slate-900 border-slate-800/80' : 'bg-slate-200 border-slate-300'
+                          }`}>
+                            <div
+                              style={{ width: `${barWidth}%` }}
+                              className={`h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400 transition-all duration-300 ${
+                                isHovered ? 'shadow-lg shadow-sky-500/40' : ''
+                              }`}
+                            />
+                          </div>
+
+                          {isHovered && (
+                            <div className="absolute right-3 -top-10 z-20 pointer-events-none backdrop-blur-xl bg-slate-950 text-white p-2 px-3 rounded-xl border border-slate-700 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in zoom-in-95 duration-150">
+                              <span className="w-2 h-2 rounded-full bg-sky-400" />
+                              <span className="font-medium text-slate-400">{item.model}:</span>
+                              <span className="font-bold text-white tabular-nums">{item.count} {item.count === 1 ? 'carro' : 'carros'}</span>
+                              <span className="text-sky-400 text-[11px] tabular-nums">({item.percentage.toFixed(1)}%)</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className={`pt-3 border-t flex items-center justify-between text-[11px] ${
+                isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'
+              }`}>
+                <span>Concentração no líder ({modelVolumeData[0]?.model || 'N/D'}):</span>
+                <span className={`font-bold tabular-nums ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                  {modelVolumeData[0]?.percentage ? `${modelVolumeData[0].percentage.toFixed(1).replace('.', ',')}% das vendas` : '0%'}
+                </span>
+              </div>
+            </div>
+
+            {/* Chart 2: Composição da Comissão Bruta */}
+            <div className={`rounded-2xl p-6 shadow-2xl transition-all duration-200 relative flex flex-col justify-between overflow-hidden ${
+              isDark
+                ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 hover:border-slate-700 text-slate-100'
+                : 'bg-white border border-slate-200/90 shadow-slate-200 hover:border-slate-300 text-slate-800'
+            }`}>
+              <div className={`flex items-start justify-between gap-3 border-b pb-4 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-xl border text-indigo-500 flex items-center justify-center shadow-inner ${
+                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-indigo-50 border-indigo-200'
+                    }`}>
+                      <PieChart size={16} />
+                    </div>
+                    <h3 className={`text-base font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                      Composição da Comissão Bruta
+                    </h3>
+                  </div>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Fatiamento proporcional da receita por origem de bonificação
+                  </p>
+                </div>
+                <span className="text-xs font-bold bg-indigo-500/10 text-indigo-500 px-2.5 py-1 rounded-xl border border-indigo-500/20">
+                  {grossCommissionSlices.length} {grossCommissionSlices.length === 1 ? 'fonte ativa' : 'fontes ativas'}
+                </span>
+              </div>
+
+              <div className="pt-4 pb-2 flex-1">
+                {grossCommissionSlices.length === 0 ? (
+                  <div className="h-56 flex flex-col items-center justify-center text-slate-500 text-xs w-full">
+                    <Calculator size={28} className="mb-2 text-slate-600" />
+                    <span>Nenhuma comissão apurada para compor o gráfico.</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-3">
+                    <div className="lg:col-span-5 flex items-center justify-center">
+                      <div className="relative w-[260px] h-[260px] flex items-center justify-center shrink-0">
+                        <svg width="260" height="260" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
+                          {donutGeometry.map((slice) => {
+                            const isHovered = activeDonutSlice === slice.index;
+                            return (
+                              <path
+                                key={slice.id}
+                                d={slice.pathData}
+                                fill={slice.color}
+                                className="transition-all duration-200 cursor-pointer"
+                                style={{
+                                  transformOrigin: '130px 130px',
+                                  transform: isHovered ? 'scale(1.04)' : 'scale(1)',
+                                  filter: isHovered ? 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.4))' : 'none',
+                                  opacity: activeDonutSlice !== null && !isHovered ? 0.35 : 1
+                                }}
+                                onMouseEnter={() => setActiveDonutSlice(slice.index)}
+                                onMouseLeave={() => setActiveDonutSlice(null)}
+                              />
+                            );
+                          })}
+                        </svg>
+
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">TOTAL BRUTO</span>
+                          <span className={`text-lg font-black tracking-tight tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                            {formatBRL(metrics.grossCommission)}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 mt-1">100% Ativo</span>
+                        </div>
+
+                        {activeDonutSlice !== null && donutGeometry[activeDonutSlice] && (
+                          <div className="absolute -bottom-3 z-30 pointer-events-none backdrop-blur-xl bg-slate-950/95 text-white py-1.5 px-3 rounded-xl border border-slate-700 shadow-2xl text-[11px] whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
+                            <div className="flex items-center gap-1.5 font-mono tabular-nums">
+                              <span 
+                                className="w-2 h-2 rounded-full shrink-0" 
+                                style={{ backgroundColor: donutGeometry[activeDonutSlice].color }} 
+                              />
+                              <span className="font-semibold text-slate-300 font-sans">
+                                {donutGeometry[activeDonutSlice].label}:
+                              </span>
+                              <span className="font-bold text-white">
+                                {formatBRL(donutGeometry[activeDonutSlice].value)}
+                              </span>
+                              <span className="text-sky-400 font-semibold">
+                                ({donutGeometry[activeDonutSlice].percent.toFixed(1).replace('.', ',')}%)
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-7 flex flex-col justify-center space-y-1.5 min-w-0">
+                      {grossCommissionSlices.filter(s => s.value > 0).map((slice, index) => {
+                        const isHovered = activeDonutSlice === index;
+                        return (
+                          <div
+                            key={slice.id}
+                            onMouseEnter={() => setActiveDonutSlice(index)}
+                            onMouseLeave={() => setActiveDonutSlice(null)}
+                            className={`flex items-center justify-between gap-3 py-1.5 px-3 rounded-xl border transition-all cursor-pointer ${
+                              isHovered 
+                                ? isDark ? 'bg-slate-800 border-slate-700 shadow-md' : 'bg-slate-100 border-slate-300 shadow-sm'
+                                : isDark ? 'bg-slate-950/50 border-slate-800/80 hover:bg-slate-850 hover:border-slate-700' : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                              <span className={`text-xs font-semibold whitespace-nowrap ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                {slice.shortLabel || slice.label}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0 font-mono tabular-nums">
+                              <span className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                                {formatBRL(slice.value)}
+                              </span>
+                              <span className="text-[11px] font-semibold text-slate-500 w-12 text-right">
+                                {slice.percent.toFixed(1).replace('.', ',')}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className={`pt-3 border-t flex items-center justify-between text-[11px] ${
+                isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'
+              }`}>
+                <span>Maior alavanca de ganho:</span>
+                <span className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                  {grossCommissionSlices[0] ? `${grossCommissionSlices[0].label} (${grossCommissionSlices[0].percent.toFixed(1).replace('.', ',')}%)` : 'N/D'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. SEÇÃO: LANÇAMENTO DE VENDAS (DESKTOP TABLE + MOBILE ACCORDION CARDS) */}
+        <section className="w-full px-4 sm:px-8 mt-6 print:px-0 print:mt-0 print:space-y-0 print-avoid-break">
+          <div className="mb-4 print:hidden">
+            <h2 className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              Lançamento de Vendas
+            </h2>
+            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Insira os dados individuais de cada venda realizada na competência
+            </p>
+            <div className="flex flex-wrap items-center gap-3 mt-3">
+              <div className={`text-xs font-medium px-3 py-1.5 rounded-xl shadow-xs border ${
+                isDark ? 'text-slate-300 bg-slate-900/80 border-slate-800' : 'text-slate-700 bg-white border-slate-200'
+              }`}>
+                Total de registros: <strong className={`font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{activeSales.length}</strong>
               </div>
               <button
                 type="button"
                 onClick={() => setIsSalesCollapsed(prev => !prev)}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200/80 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-500 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer"
               >
                 {isSalesCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                 <span>{isSalesCollapsed ? 'Mostrar Lançamentos' : 'Recolher Lançamentos'}</span>
@@ -2044,7 +2517,12 @@ export default function App() {
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden print:border print:border-slate-300 print:rounded-xl print:shadow-none print:overflow-visible print:mb-2.5">
+          {/* DESKTOP VIEW: Fluid Wide Table */}
+          <div className={`hidden lg:block rounded-2xl overflow-hidden shadow-2xl transition-colors print:border print:border-slate-300 print:rounded-xl print:shadow-none print:overflow-visible print:mb-2.5 ${
+            isDark
+              ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 text-slate-100'
+              : 'bg-white border border-slate-200/90 text-slate-800'
+          }`}>
             <div className="w-full overflow-x-auto print:overflow-visible">
               <table className="w-full min-w-full text-left text-xs whitespace-nowrap print:text-[7.8px] print:w-full print:table-fixed">
                 
@@ -2065,15 +2543,17 @@ export default function App() {
                   <col className="w-[6.5%]" style={{ width: '6.5%' }} />
                 </colgroup>
 
-                <thead className="bg-slate-100/60 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-semibold print:bg-slate-100 print:text-[7.8px] print:border-b print:border-slate-300">
+                <thead className={`border-b uppercase tracking-wider text-[11px] font-semibold print:bg-slate-100 print:text-[7.8px] print:border-b print:border-slate-300 ${
+                  isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-700'
+                }`}>
                   <tr>
-                    <th className="px-3 py-3 font-semibold text-slate-700 print:text-slate-900 print:px-1 print:py-0.5 print:w-[14%] truncate">Cliente</th>
-                    <th className="px-3 py-3 font-semibold text-slate-700 print:text-slate-900 print:px-1 print:py-0.5 print:w-[11%] truncate">Carro</th>
+                    <th className="px-3 py-3 font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[14%] truncate">Cliente</th>
+                    <th className="px-3 py-3 font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[11%] truncate">Carro</th>
 
                     <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[8%]">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[7.8px]">VN (R$)</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">VN (R$)</span>
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.vnBase)}
                         </span>
                       </div>
@@ -2081,8 +2561,8 @@ export default function App() {
 
                     <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[7.5%]">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[7.8px]">Margem</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">Margem</span>
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.marginBase)}
                         </span>
                       </div>
@@ -2090,19 +2570,19 @@ export default function App() {
 
                     <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[7.5%]">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[7.8px]">F&I (R$)</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">F&I (R$)</span>
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.fAndIBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-3 text-center font-semibold text-slate-700 print:text-slate-900 print:px-1 print:py-0.5 print:w-[5.5%]">Retorno</th>
+                    <th className="px-3 py-3 text-center font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[5.5%]">Retorno</th>
                     
                     <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[6.5%]">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[7.8px]">SPF</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">SPF</span>
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
                           Penetr: {formatPercent(metrics.spfPenetration)}
                         </span>
                       </div>
@@ -2110,8 +2590,8 @@ export default function App() {
 
                     <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[7%]">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[7.8px]">Acessórios</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">Acessórios</span>
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
                           T.M: {formatBRL(metrics.accTicketHeader)}
                         </span>
                       </div>
@@ -2119,39 +2599,43 @@ export default function App() {
 
                     <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[6.5%]">
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[7.8px]">Autobox</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">Autobox</span>
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.autoboxBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Emplac.</th>
-                    <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Seguro</th>
-                    <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Bônus</th>
-                    <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Usados C.</th>
-                    <th className="px-2 py-3 text-center font-semibold text-slate-700 print:hidden w-12">Ações</th>
+                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Emplac.</th>
+                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Seguro</th>
+                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Bônus</th>
+                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Usados C.</th>
+                    <th className="px-2 py-3 text-center font-semibold print:hidden w-12">Ações</th>
                   </tr>
                 </thead>
 
-                <tbody className={`divide-y divide-slate-100 print:divide-slate-200 ${isSalesCollapsed ? 'hidden print:table-row-group' : ''}`}>
+                <tbody className={`divide-y print:divide-slate-200 ${
+                  isDark ? 'divide-slate-800/80' : 'divide-slate-100'
+                } ${isSalesCollapsed ? 'hidden print:table-row-group' : ''}`}>
                   {activeSales.length === 0 ? (
                     <tr>
                       <td colSpan="14" className="text-center py-16 print:py-4 px-4">
                         <div className="max-w-md mx-auto flex flex-col items-center justify-center text-center">
-                          <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-400 mb-3 shadow-xs print:hidden">
-                            <ClipboardList size={26} strokeWidth={1.8} className="text-slate-400" />
+                          <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center text-slate-500 mb-3 shadow-inner print:hidden ${
+                            isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-200'
+                          }`}>
+                            <ClipboardList size={26} strokeWidth={1.8} />
                           </div>
-                          <h4 className="text-sm font-bold text-slate-800 tracking-tight">
+                          <h4 className={`text-sm font-bold tracking-tight ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                             Nenhuma venda registrada neste mês
                           </h4>
-                          <p className="text-xs text-slate-500 mt-1 max-w-sm print:hidden">
+                          <p className={`text-xs mt-1 max-w-sm print:hidden ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                             Seus lançamentos comerciais e cálculos em tempo real aparecerão aqui assim que você cadastrar o primeiro veículo.
                           </p>
                           <button
                             type="button"
                             onClick={() => setIsAddModalOpen(true)}
-                            className="mt-4 inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer print:hidden"
+                            className="mt-4 inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold px-4 py-2 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 cursor-pointer print:hidden"
                           >
                             <Plus size={15} strokeWidth={2.5} />
                             <span>Clique em + Adicionar Nova Venda para iniciar</span>
@@ -2163,7 +2647,9 @@ export default function App() {
                     activeSales.map((sale, index) => (
                       <tr 
                         key={sale.id} 
-                        className="hover:bg-slate-50/70 transition-colors duration-150 group print:hover:bg-transparent print:border-b print:border-slate-200"
+                        className={`transition-colors duration-150 group print:hover:bg-transparent print:border-b print:border-slate-200 ${
+                          isDark ? 'hover:bg-slate-850/40' : 'hover:bg-slate-50/70'
+                        }`}
                       >
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[14%] truncate">
                           <input 
@@ -2171,7 +2657,11 @@ export default function App() {
                             value={sale.client} 
                             onChange={(e) => handleSaleChange(sale.id, 'client', e.target.value)}
                             placeholder={`Cliente ${index + 1}`}
-                            className="w-36 min-w-[150px] bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[7.8px] print:text-slate-900 print:truncate print:h-auto print:w-full print:min-w-0"
+                            className={`w-36 min-w-[150px] border text-xs font-medium rounded-xl px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.8px] print:text-slate-900 print:truncate print:h-auto print:w-full print:min-w-0 ${
+                              isDark 
+                                ? 'bg-slate-950/70 hover:bg-slate-950 focus:bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600'
+                                : 'bg-slate-50/70 hover:bg-white focus:bg-white border-slate-200 text-slate-800 placeholder:text-slate-400'
+                            }`}
                           />
                         </td>
 
@@ -2181,12 +2671,17 @@ export default function App() {
                             value={sale.car} 
                             onChange={(e) => handleSaleChange(sale.id, 'car', e.target.value)}
                             placeholder="Modelo"
-                            className="w-36 min-w-[140px] bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 print:bg-transparent print:border-none print:p-0 print:text-[7.8px] print:text-slate-900 print:truncate print:h-auto print:w-full print:min-w-0"
+                            className={`w-36 min-w-[140px] border text-xs font-medium rounded-xl px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.8px] print:text-slate-900 print:truncate print:h-auto print:w-full print:min-w-0 ${
+                              isDark 
+                                ? 'bg-slate-950/70 hover:bg-slate-950 focus:bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600'
+                                : 'bg-slate-50/70 hover:bg-white focus:bg-white border-slate-200 text-slate-800 placeholder:text-slate-400'
+                            }`}
                           />
                         </td>
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[8%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.vn} 
                             onChange={(v) => handleSaleChange(sale.id, 'vn', v)} 
@@ -2195,6 +2690,7 @@ export default function App() {
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[7.5%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.margin} 
                             onChange={(v) => handleSaleChange(sale.id, 'margin', v)} 
@@ -2203,6 +2699,7 @@ export default function App() {
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[7.5%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.fAndI} 
                             onChange={(v) => handleSaleChange(sale.id, 'fAndI', v)} 
@@ -2213,7 +2710,11 @@ export default function App() {
                           <select 
                             value={sale.returnFAndI} 
                             onChange={(e) => handleSaleChange(sale.id, 'returnFAndI', e.target.value)}
-                            className="w-24 min-w-[95px] bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-2 py-1.5 text-center focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all cursor-pointer print:bg-transparent print:border-none print:appearance-none print:p-0 print:text-[7.8px] print:text-center print:text-slate-900 print:w-full print:min-w-0"
+                            className={`w-24 min-w-[95px] border text-xs font-semibold rounded-xl px-2 py-1.5 text-center focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 transition-all cursor-pointer print:bg-transparent print:border-none print:appearance-none print:p-0 print:text-[7.8px] print:text-center print:text-slate-900 print:w-full print:min-w-0 ${
+                              isDark
+                                ? 'bg-slate-950/70 hover:bg-slate-950 focus:bg-slate-950 border-slate-800 text-slate-200'
+                                : 'bg-slate-50/70 hover:bg-white focus:bg-white border-slate-200 text-slate-800'
+                            }`}
                           >
                             <option value="R0">R0 (0%)</option>
                             <option value="R1">R1 (1,2%)</option>
@@ -2225,6 +2726,7 @@ export default function App() {
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.spf} 
                             onChange={(v) => handleSaleChange(sale.id, 'spf', v)} 
@@ -2233,6 +2735,7 @@ export default function App() {
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[7%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.accessories} 
                             onChange={(v) => handleSaleChange(sale.id, 'accessories', v)} 
@@ -2241,6 +2744,7 @@ export default function App() {
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.autobox} 
                             onChange={(v) => handleSaleChange(sale.id, 'autobox', v)} 
@@ -2249,6 +2753,7 @@ export default function App() {
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.emplacamento} 
                             onChange={(v) => handleSaleChange(sale.id, 'emplacamento', v)} 
@@ -2257,6 +2762,7 @@ export default function App() {
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.seguro} 
                             onChange={(v) => handleSaleChange(sale.id, 'seguro', v)} 
@@ -2265,6 +2771,7 @@ export default function App() {
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.bonusCarro} 
                             onChange={(v) => handleSaleChange(sale.id, 'bonusCarro', v)} 
@@ -2273,6 +2780,7 @@ export default function App() {
 
                         <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
                           <CurrencyInput 
+                            theme={theme}
                             className="w-28 min-w-[115px] text-right text-xs" 
                             value={sale.usadosCaptados} 
                             onChange={(v) => handleSaleChange(sale.id, 'usadosCaptados', v)} 
@@ -2283,7 +2791,7 @@ export default function App() {
                           <button 
                             type="button"
                             onClick={() => handleRemoveSale(sale.id)}
-                            className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors duration-150 cursor-pointer"
+                            className="text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 p-1.5 rounded-xl transition-colors duration-150 cursor-pointer"
                             title="Remover venda"
                           >
                             <Trash2 size={15} />
@@ -2296,76 +2804,304 @@ export default function App() {
               </table>
             </div>
 
-            <div className={`p-4 bg-slate-50/60 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden ${isSalesCollapsed ? 'hidden' : ''}`}>
+            <div className={`p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden ${
+              isDark ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-50/80 border-slate-200'
+            } ${isSalesCollapsed ? 'hidden' : ''}`}>
               <button 
                 type="button"
                 onClick={() => setIsAddModalOpen(true)} 
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2.5} />
                 <span>Adicionar Nova Venda</span>
               </button>
               
-              <span className="text-xs text-slate-500 font-medium">
+              <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Pressione para abrir o formulário detalhado de cadastro de venda
               </span>
             </div>
           </div>
+
+          {/* MOBILE FIRST VIEW: Ergonomic Accordion Cards */}
+          <div className={`block lg:hidden space-y-3 print:hidden ${isSalesCollapsed ? 'hidden' : ''}`}>
+            {activeSales.length === 0 ? (
+              <div className={`border rounded-2xl p-8 text-center ${
+                isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
+              }`}>
+                <ClipboardList size={32} className="mx-auto text-slate-500 mb-2" />
+                <p className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nenhuma venda lançada ainda</p>
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="mt-4 w-full min-h-[44px] inline-flex items-center justify-center gap-2 bg-sky-500 text-slate-950 font-bold text-xs rounded-xl shadow-md"
+                >
+                  <Plus size={16} />
+                  <span>Cadastrar Primeira Venda</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                {activeSales.map((sale, idx) => {
+                  const isExpanded = expandedMobileCardId === sale.id;
+                  return (
+                    <div 
+                      key={sale.id}
+                      className={`border rounded-2xl p-4 shadow-xl space-y-3 transition-all ${
+                        isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-sky-500 block">
+                            Registro #{idx + 1}
+                          </span>
+                          <h4 className={`text-sm font-bold truncate mt-0.5 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                            {sale.client || `Cliente ${idx + 1}`}
+                          </h4>
+                          <span className={`text-xs block truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            {sale.car || 'Veículo não informado'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedMobileCardId(isExpanded ? null : sale.id)}
+                            className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border cursor-pointer ${
+                              isDark
+                                ? 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                                : 'bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900'
+                            }`}
+                            aria-label="Expandir detalhes"
+                          >
+                            <SlidersHorizontal size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSale(sale.id)}
+                            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500/20 cursor-pointer"
+                            aria-label="Excluir venda"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Summary chips */}
+                      <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
+                        <div className={`p-2 rounded-xl border ${
+                          isDark ? 'bg-slate-950 border-slate-800/80 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
+                        }`}>
+                          <span className="text-[10px] text-slate-500 uppercase block font-semibold">Valor da Nota</span>
+                          <span className="font-bold font-mono">{formatBRL(sale.vn)}</span>
+                        </div>
+                        <div className={`p-2 rounded-xl border ${
+                          isDark ? 'bg-slate-950 border-slate-800/80 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
+                        }`}>
+                          <span className="text-[10px] text-slate-500 uppercase block font-semibold">Margem</span>
+                          <span className="font-bold font-mono">{formatBRL(sale.margin)}</span>
+                        </div>
+                      </div>
+
+                      {/* Collapsible inputs */}
+                      {isExpanded && (
+                        <div className={`pt-3 border-t space-y-3 animate-in fade-in duration-150 ${
+                          isDark ? 'border-slate-800' : 'border-slate-200'
+                        }`}>
+                          <div className="grid grid-cols-1 gap-2.5">
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Nome do Cliente</label>
+                              <input
+                                type="text"
+                                value={sale.client}
+                                onChange={(e) => handleSaleChange(sale.id, 'client', e.target.value)}
+                                className={`min-h-[44px] w-full border rounded-xl px-3 text-xs ${
+                                  isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                                }`}
+                              />
+                            </div>
+
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Modelo do Carro</label>
+                              <input
+                                type="text"
+                                value={sale.car}
+                                onChange={(e) => handleSaleChange(sale.id, 'car', e.target.value)}
+                                className={`min-h-[44px] w-full border rounded-xl px-3 text-xs ${
+                                  isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                                }`}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>F&I</label>
+                              <CurrencyInput 
+                                theme={theme}
+                                className="min-h-[44px]"
+                                value={sale.fAndI} 
+                                onChange={(v) => handleSaleChange(sale.id, 'fAndI', v)} 
+                              />
+                            </div>
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Retorno F&I</label>
+                              <select 
+                                value={sale.returnFAndI} 
+                                onChange={(e) => handleSaleChange(sale.id, 'returnFAndI', e.target.value)}
+                                className={`min-h-[44px] w-full border text-xs font-semibold rounded-xl px-2 ${
+                                  isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
+                                }`}
+                              >
+                                <option value="R0">R0 (0%)</option>
+                                <option value="R1">R1 (1,2%)</option>
+                                <option value="R2">R2 (2,4%)</option>
+                                <option value="R3">R3 (3,6%)</option>
+                                <option value="R4">R4 (4,8%)</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>SPF</label>
+                              <CurrencyInput 
+                                theme={theme}
+                                className="min-h-[44px]"
+                                value={sale.spf} 
+                                onChange={(v) => handleSaleChange(sale.id, 'spf', v)} 
+                              />
+                            </div>
+
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Acessórios</label>
+                              <CurrencyInput 
+                                theme={theme}
+                                className="min-h-[44px]"
+                                value={sale.accessories} 
+                                onChange={(v) => handleSaleChange(sale.id, 'accessories', v)} 
+                              />
+                            </div>
+
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Autobox</label>
+                              <CurrencyInput 
+                                theme={theme}
+                                className="min-h-[44px]"
+                                value={sale.autobox} 
+                                onChange={(v) => handleSaleChange(sale.id, 'autobox', v)} 
+                              />
+                            </div>
+
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Emplacamento</label>
+                              <CurrencyInput 
+                                theme={theme}
+                                className="min-h-[44px]"
+                                value={sale.emplacamento} 
+                                onChange={(v) => handleSaleChange(sale.id, 'emplacamento', v)} 
+                              />
+                            </div>
+
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Seguro</label>
+                              <CurrencyInput 
+                                theme={theme}
+                                className="min-h-[44px]"
+                                value={sale.seguro} 
+                                onChange={(v) => handleSaleChange(sale.id, 'seguro', v)} 
+                              />
+                            </div>
+
+                            <div>
+                              <label className={`text-[11px] font-semibold block mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Bônus Carro</label>
+                              <CurrencyInput 
+                                theme={theme}
+                                className="min-h-[44px]"
+                                value={sale.bonusCarro} 
+                                onChange={(v) => handleSaleChange(sale.id, 'bonusCarro', v)} 
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-2xl shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer"
+                >
+                  <Plus size={18} strokeWidth={2.5} />
+                  <span>Adicionar Nova Venda</span>
+                </button>
+              </>
+            )}
+          </div>
         </section>
 
-        {/* Screen: Lançamentos Extras Inputs */}
-        <section className="w-full px-6 sm:px-8 mt-6 print:hidden">
-          <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 sm:p-8 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        {/* 5. SEÇÃO: LANÇAMENTOS EXTRAS (INPUTS DE PREMIAÇÃO MANUAL) */}
+        <section className="w-full px-4 sm:px-8 mt-6 print:hidden">
+          <div className={`rounded-2xl p-6 sm:p-8 space-y-4 shadow-2xl transition-colors ${
+            isDark
+              ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 text-slate-100'
+              : 'bg-white border border-slate-200/90 text-slate-800'
+          }`}>
+            <div className={`flex items-center justify-between border-b pb-4 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
               <div>
-                <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
-                  Lançamentos Extras
+                <h2 className={`text-xl font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                  Lançamentos de Premiações
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   Prêmios manuais e bônus que somam diretamente à comissão bruta
                 </p>
               </div>
-              <span className="text-xs font-semibold text-sky-700 bg-sky-50 px-3 py-1 rounded-lg border border-sky-100">
+              <span className="text-xs font-bold text-sky-500 bg-sky-500/10 px-3 py-1 rounded-xl border border-sky-500/20 font-mono tabular-nums">
                 Total: {formatBRL(metrics.extrasTotal)}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Prêmio Usados Captados
                 </label>
                 <CurrencyInput 
+                  theme={theme}
                   value={activeExtras.premioUsados} 
                   onChange={(v) => handleUpdateActiveMonthExtras('premioUsados', v)} 
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Prêmio Águia
                 </label>
                 <CurrencyInput 
+                  theme={theme}
                   value={activeExtras.premioAguia} 
                   onChange={(v) => handleUpdateActiveMonthExtras('premioAguia', v)} 
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Prêmio Líder
                 </label>
                 <CurrencyInput 
+                  theme={theme}
                   value={activeExtras.premioLider} 
                   onChange={(v) => handleUpdateActiveMonthExtras('premioLider', v)} 
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Prêmio NPS
                 </label>
                 <CurrencyInput 
+                  theme={theme}
                   value={activeExtras.premioNps} 
                   onChange={(v) => handleUpdateActiveMonthExtras('premioNps', v)} 
                 />
@@ -2374,265 +3110,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Screen: BI & Analytics Section */}
-        <section className="w-full print:hidden">
-          <div className="w-full px-6 sm:px-8 pt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
-                  Inteligência Comercial & Análise BI
-                </h2>
-                <span className="bg-sky-50 text-sky-700 text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full border border-sky-200/80">
-                  Analytics
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Distribuição de mix de faturamento e decomposição transparente das receitas apuradas
-              </p>
-            </div>
-            <span className="text-xs text-slate-500 font-medium hidden sm:inline-block">
-              {activeSales.length} {activeSales.length === 1 ? 'venda analisada' : 'vendas analisadas'}
-            </span>
-          </div>
-
-          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 px-6 sm:px-8 mt-4 mb-12">
-            {/* Chart 1: Volume por Modelo */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
-              <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
-                      <BarChart3 size={16} />
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                      Volume por Modelo
-                    </h3>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Ranking decrescente de unidades faturadas no período
-                  </p>
-                </div>
-                <span className="text-xs font-semibold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200/70">
-                  {modelVolumeData.length} {modelVolumeData.length === 1 ? 'modelo' : 'modelos'}
-                </span>
-              </div>
-
-              <div className="pt-5 pb-2 flex-1">
-                {modelVolumeData.length === 0 ? (
-                  <div className="h-56 flex flex-col items-center justify-center text-slate-400 text-xs">
-                    <Car size={28} className="mb-2 text-slate-300" />
-                    <span>Nenhum veículo lançado para análise gráfica.</span>
-                  </div>
-                ) : (
-                  <div className="min-h-[400px] max-h-[540px] overflow-y-auto pr-2 space-y-3">
-                    {modelVolumeData.map((item, idx) => {
-                      const isHovered = activeModelBar === item.model;
-                      const maxCount = modelVolumeData[0]?.count || 1;
-                      const barWidth = Math.max(8, (item.count / maxCount) * 100);
-
-                      return (
-                        <div
-                          key={item.model}
-                          onMouseEnter={() => setActiveModelBar(item.model)}
-                          onMouseLeave={() => setActiveModelBar(null)}
-                          className={`p-2.5 rounded-xl border transition-all duration-200 relative cursor-pointer ${
-                            isHovered 
-                              ? 'bg-slate-50/90 border-sky-300 shadow-sm' 
-                              : 'bg-white border-transparent hover:border-slate-200'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between text-xs mb-1.5">
-                            <div className="flex items-center gap-2 min-w-0 pr-2">
-                              <span className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0 ${
-                                idx === 0 
-                                  ? 'bg-sky-600 text-white shadow-xs' 
-                                  : idx === 1 
-                                  ? 'bg-slate-800 text-white' 
-                                  : 'bg-slate-100 text-slate-600'
-                              }`}>
-                                #{idx + 1}
-                              </span>
-                              <span className="font-semibold text-slate-800 truncate tracking-tight text-[13px]">
-                                {item.model}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-slate-900 font-extrabold text-xs">
-                                {item.count} {item.count === 1 ? 'unid.' : 'unids.'}
-                              </span>
-                              <span className="text-[11px] font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100">
-                                {item.percentage.toFixed(1).replace('.', ',')}%
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden p-[1px]">
-                            <div
-                              style={{ width: `${barWidth}%` }}
-                              className={`h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-600 transition-all duration-300 ${
-                                isHovered ? 'from-sky-400 to-sky-500 shadow-sm shadow-sky-500/30' : ''
-                              }`}
-                            />
-                          </div>
-
-                          {isHovered && (
-                            <div className="absolute right-3 -top-10 z-20 pointer-events-none backdrop-blur-md bg-slate-900/95 text-white p-2 px-3 rounded-xl border border-slate-700 shadow-xl text-xs flex items-center gap-2 animate-in fade-in zoom-in-95 duration-150">
-                              <span className="w-2 h-2 rounded-full bg-sky-400"></span>
-                              <span className="font-medium text-slate-300">{item.model}:</span>
-                              <span className="font-bold text-white">{item.count} {item.count === 1 ? 'carro' : 'carros'}</span>
-                              <span className="text-sky-300 text-[11px]">({item.percentage.toFixed(1)}% do total)</span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                <span>Concentração no líder ({modelVolumeData[0]?.model || 'N/D'}):</span>
-                <span className="font-bold text-slate-800">
-                  {modelVolumeData[0]?.percentage ? `${modelVolumeData[0].percentage.toFixed(1).replace('.', ',')}% das vendas` : '0%'}
-                </span>
-              </div>
-            </div>
-
-            {/* Chart 2: Composição da Comissão Bruta */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 relative flex flex-col justify-between overflow-hidden">
-              <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                      <PieChart size={16} />
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                      Composição da Comissão Bruta
-                    </h3>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Fatiamento proporcional da receita por origem de bonificação
-                  </p>
-                </div>
-                <span className="text-xs font-semibold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg border border-indigo-100">
-                  {grossCommissionSlices.length} {grossCommissionSlices.length === 1 ? 'fonte ativa' : 'fontes ativas'}
-                </span>
-              </div>
-
-              <div className="pt-4 pb-2 flex-1">
-                {grossCommissionSlices.length === 0 ? (
-                  <div className="h-56 flex flex-col items-center justify-center text-slate-400 text-xs w-full">
-                    <Calculator size={28} className="mb-2 text-slate-300" />
-                    <span>Nenhuma comissão apurada para compor o gráfico.</span>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-3">
-                    <div className="lg:col-span-5 flex items-center justify-center">
-                      <div className="relative w-[260px] h-[260px] flex items-center justify-center shrink-0">
-                        <svg width="260" height="260" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
-                          <defs>
-                            <filter id="donutGlow" x="-20%" y="-20%" width="140%" height="140%">
-                              <feDropShadow dx="0" dy="4" stdDeviation="5" floodOpacity="0.18" />
-                            </filter>
-                          </defs>
-
-                          {donutGeometry.map((slice) => {
-                            const isHovered = activeDonutSlice === slice.index;
-                            return (
-                              <path
-                                key={slice.id}
-                                d={slice.pathData}
-                                fill={slice.color}
-                                className="transition-all duration-200 cursor-pointer"
-                                style={{
-                                  transformOrigin: '130px 130px',
-                                  transform: isHovered ? 'scale(1.04)' : 'scale(1)',
-                                  filter: isHovered ? 'url(#donutGlow)' : 'none',
-                                  opacity: activeDonutSlice !== null && !isHovered ? 0.45 : 1
-                                }}
-                                onMouseEnter={() => setActiveDonutSlice(slice.index)}
-                                onMouseLeave={() => setActiveDonutSlice(null)}
-                              />
-                            );
-                          })}
-                        </svg>
-
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">TOTAL BRUTO</span>
-                          <span className="text-lg font-black text-slate-900 tracking-tight">{formatBRL(metrics.grossCommission)}</span>
-                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 mt-1">100% Ativo</span>
-                        </div>
-
-                        {activeDonutSlice !== null && donutGeometry[activeDonutSlice] && (
-                          <div className="absolute -bottom-3 z-30 pointer-events-none backdrop-blur-md bg-slate-900/95 text-white py-1.5 px-3 rounded-xl border border-slate-700 shadow-2xl text-[11px] whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
-                            <div className="flex items-center gap-1.5">
-                              <span 
-                                className="w-2 h-2 rounded-full shrink-0" 
-                                style={{ backgroundColor: donutGeometry[activeDonutSlice].color }} 
-                              />
-                              <span className="font-semibold text-slate-200">
-                                {donutGeometry[activeDonutSlice].label}:
-                              </span>
-                              <span className="font-bold text-white">
-                                {formatBRL(donutGeometry[activeDonutSlice].value)}
-                              </span>
-                              <span className="text-sky-300 font-semibold">
-                                ({donutGeometry[activeDonutSlice].percent.toFixed(1).replace('.', ',')}%)
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="lg:col-span-7 flex flex-col justify-center space-y-1.5 min-w-0">
-                      {grossCommissionSlices.filter(s => s.value > 0).map((slice, index) => {
-                        const isHovered = activeDonutSlice === index;
-                        return (
-                          <div
-                            key={slice.id}
-                            onMouseEnter={() => setActiveDonutSlice(index)}
-                            onMouseLeave={() => setActiveDonutSlice(null)}
-                            className={`flex items-center justify-between gap-3 py-1.5 px-3 rounded-lg border transition-colors cursor-pointer ${
-                              isHovered 
-                                ? 'bg-slate-50 border-slate-200/80 shadow-xs' 
-                                : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-200/60'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
-                              <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
-                                {slice.shortLabel || slice.label}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="text-xs font-bold text-slate-900 font-mono">
-                                {formatBRL(slice.value)}
-                              </span>
-                              <span className="text-[11px] font-semibold text-slate-500 w-12 text-right">
-                                {slice.percent.toFixed(1).replace('.', ',')}%
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                <span>Maior alavanca de ganho:</span>
-                <span className="font-bold text-slate-800">
-                  {grossCommissionSlices[0] ? `${grossCommissionSlices[0].label} (${grossCommissionSlices[0].percent.toFixed(1).replace('.', ',')}%)` : 'N/D'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Print Bottom Section: Balanced Audit Grid */}
+        {/* Print Bottom Section: Balanced Audit Grid (strictly for @media print) */}
         <div className="hidden print:grid print:grid-cols-12 print:gap-3 print:mt-3 print:mb-0 print-avoid-break">
           
           {/* Bloco 1: Memória de Cálculo (6 colunas) */}
@@ -2654,7 +3132,6 @@ export default function App() {
 
               <div className="bg-slate-50/70 border border-slate-200 rounded-lg p-2 text-[8.5px]">
                 <div className="grid grid-cols-2 gap-x-4">
-                  
                   <div className="space-y-1 divide-y divide-slate-100">
                     <div className="flex items-center justify-between pt-0.5">
                       <div className="truncate pr-1">
@@ -2789,7 +3266,7 @@ export default function App() {
                             </span>
                             <span className="font-bold text-slate-800 truncate">{item.model}</span>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-1 shrink-0 font-mono">
                             <span className="font-black text-slate-900">{item.count} un.</span>
                             <span className="text-[7px] font-bold text-sky-700 bg-sky-50 px-1 py-0.2 rounded border border-sky-100">
                               {item.percentage.toFixed(0)}%
@@ -2810,7 +3287,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bloco 3: Composição da Comissão Bruta (3 colunas) com Donut Expandido para 145px */}
+          {/* Bloco 3: Composição da Comissão Bruta (3 colunas) */}
           <div className="print:col-span-3 border border-slate-200 rounded-xl p-3 bg-white flex flex-col justify-between print-avoid-break">
             <div>
               <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-1 text-slate-900">
@@ -2844,9 +3321,9 @@ export default function App() {
                           />
                         ))}
                       </svg>
-                      <div className="absolute inset-0 m-auto w-[62px] h-[62px] rounded-full bg-white border border-slate-200 flex flex-col items-center justify-center text-center p-0.5 pointer-events-none shadow-2xs">
+                      <div className="absolute inset-0 m-auto w-[62px] h-[62px] rounded-full bg-white border border-slate-200 flex flex-col items-center justify-center text-center p-0.5 pointer-events-none">
                         <span className="text-[6.5px] font-bold text-slate-400 uppercase leading-none">Total</span>
-                        <span className="text-[7.5px] font-black text-slate-900 truncate max-w-[56px] mt-0.5">
+                        <span className="text-[7.5px] font-black text-slate-900 truncate max-w-[56px] mt-0.5 font-mono">
                           {formatBRL(metrics.grossCommission)}
                         </span>
                       </div>
@@ -2883,112 +3360,139 @@ export default function App() {
   const userDisplayName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 flex flex-col items-center justify-start p-2 sm:p-4 text-slate-800 font-['Inter',sans-serif] antialiased selection:bg-sky-100 selection:text-sky-900 print:bg-white print:p-0 print:m-0 print:min-h-0">
+    <div className={`min-h-screen w-full flex flex-col items-center justify-start font-['Inter',sans-serif] antialiased transition-colors duration-200 selection:bg-sky-500/30 selection:text-sky-200 print:bg-white print:text-slate-900 print:p-0 print:m-0 print:min-h-0 ${
+      isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-800'
+    }`}>
       
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all duration-300 animate-in fade-in slide-in-from-bottom-3 ${
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl border text-sm font-medium transition-all duration-300 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-3 ${
           toast.type === 'error' 
-            ? 'bg-rose-50 border-rose-200 text-rose-800' 
-            : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            ? 'bg-rose-950/80 border-rose-800/80 text-rose-200 shadow-rose-950/50' 
+            : 'bg-emerald-950/80 border-emerald-800/80 text-emerald-200 shadow-emerald-950/50'
         }`}>
-          <CheckCircle2 size={18} className={toast.type === 'error' ? 'text-rose-600' : 'text-emerald-600'} />
+          <CheckCircle2 size={18} className={toast.type === 'error' ? 'text-rose-400' : 'text-emerald-400'} />
           <span>{toast.text}</span>
         </div>
       )}
 
-      {/* Main Panoramical Card Container */}
-      <div 
-        className="w-full mx-auto my-4 rounded-3xl shadow-2xl bg-white overflow-hidden border border-slate-200/80 print:w-full print:max-w-none print:m-0 print:p-0 print:border-none print:shadow-none print:rounded-none print:overflow-visible"
-        style={{ width: '96%', maxWidth: '1820px' }}
-      >
-        
-        {/* Main Top Header with Profile and Logout */}
-        <header className="w-full px-6 sm:px-8 py-5 border-b border-slate-100 bg-white sticky top-0 z-30 flex items-center justify-between print:hidden">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentScreen('HUB')}>
-            <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shadow-sm">
-              <Car size={22} strokeWidth={2.2} />
+      {/* Main Top Header with Theme Switcher, Profile & Glass finish */}
+      <header className={`w-full sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8 py-3.5 border-b backdrop-blur-xl transition-colors print:hidden ${
+        isDark ? 'bg-slate-950/80 border-slate-800/80 text-slate-100' : 'bg-white/90 border-slate-200/80 text-slate-800 shadow-xs'
+      }`}>
+        <div 
+          className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group" 
+          onClick={() => setCurrentScreen('HUB')}
+        >
+          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl border flex items-center justify-center text-sky-500 shadow-inner group-hover:border-sky-500/50 transition-colors shrink-0 ${
+            isDark ? 'bg-slate-900 border-slate-800' : 'bg-sky-50 border-sky-200'
+          }`}>
+            <Car size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.2} />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h1 className={`text-base sm:text-lg font-black tracking-tight leading-none transition-colors ${
+                isDark ? 'text-slate-100 group-hover:text-white' : 'text-slate-900 group-hover:text-sky-600'
+              }`}>
+                Gestão & Comissões Auto
+              </h1>
+              <span className="bg-sky-500/10 text-sky-500 border border-sky-500/20 text-[9px] sm:text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full hidden sm:inline-block">
+                MULTI-MESES
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
-                  Gestão & Comissões Auto
-                </h1>
-                <span className="bg-slate-100 text-slate-600 text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full">
-                  MULTI-MESES
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 font-normal mt-0.5">
-                Cálculo em tempo real & sincronização segura por usuário
-              </p>
+            <p className={`text-xs font-normal mt-0.5 hidden md:block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Controle comercial executivo & sincronização em nuvem
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* User Profile Chip with Controlled Depth */}
+          <div className={`flex items-center gap-2 sm:gap-2.5 border rounded-2xl py-1 sm:py-1.5 px-2.5 sm:px-3 shadow-inner ${
+            isDark ? 'bg-slate-900/80 border-slate-800/90' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-sky-600 to-sky-400 text-slate-950 flex items-center justify-center font-black text-xs uppercase shadow-xs shrink-0">
+              {userDisplayName.charAt(0)}
             </div>
+            <div className="hidden sm:block text-left">
+              <span className={`text-xs font-bold block leading-none ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                {userDisplayName}
+              </span>
+              <span className={`text-[10px] block leading-tight truncate max-w-[130px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {user?.email}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 p-1.5 rounded-xl transition-all cursor-pointer ml-0.5 sm:ml-1 shrink-0"
+              title="Sair da Conta"
+            >
+              <LogOut size={15} />
+            </button>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* User Profile Chip */}
-            <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl py-1.5 px-3">
-              <div className="w-7 h-7 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs uppercase shadow-2xs">
-                {userDisplayName.charAt(0)}
-              </div>
-              <div className="hidden sm:block text-left">
-                <span className="text-xs font-bold text-slate-800 block leading-none">
-                  {userDisplayName}
-                </span>
-                <span className="text-[10px] text-slate-400 block leading-tight truncate max-w-[130px]">
-                  {user?.email}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-xl transition-all cursor-pointer ml-1"
-                title="Sair da Conta"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
+          {/* Theme Toggle Button in Header */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Mudar para Modo ${isDark ? 'Claro' : 'Escuro'}`}
+            title={`Mudar para Modo ${isDark ? 'Claro' : 'Escuro'}`}
+            className={`p-2 sm:p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 active:scale-95 ${
+              isDark
+                ? 'bg-slate-900/80 border-slate-800/90 text-amber-400 hover:bg-slate-800 hover:text-amber-300 hover:border-slate-700'
+                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300'
+            }`}
+          >
+            {isDark ? <Sun size={16} strokeWidth={2.2} /> : <Moon size={16} strokeWidth={2.2} />}
+          </button>
 
-            {currentScreen === 'DETAIL' && (
-              <button 
-                type="button"
-                onClick={() => window.print()} 
-                className="inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
-                title="Imprimir ou salvar em PDF"
-              >
-                <Printer size={14} />
-                <span>Exportar PDF</span>
-              </button>
-            )}
-          </div>
-        </header>
+          {currentScreen === 'DETAIL' && (
+            <button 
+              type="button"
+              onClick={() => window.print()} 
+              className="inline-flex items-center justify-center gap-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold px-2.5 py-2 sm:px-3.5 sm:py-2 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer shrink-0"
+              title="Imprimir ou salvar em PDF"
+            >
+              <Printer size={14} className="shrink-0" />
+              <span className="hidden sm:inline">Exportar </span><span>PDF</span>
+            </button>
+          )}
+        </div>
+      </header>
 
-        {/* Main Operational Flow */}
-        <main className="w-full pb-12 print:pb-0 print:p-0">
-          {currentScreen === 'HUB' ? renderHubScreen() : renderDetailScreen()}
-        </main>
-      </div>
+      {/* Main Content Area */}
+      <main className="w-full flex-1 pb-12 print:pb-0 print:p-0">
+        {currentScreen === 'HUB' ? renderHubScreen() : renderDetailScreen()}
+      </main>
 
       {/* Modal: Novo Mês de Competência */}
       {isCreateMonthOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
           onClick={(e) => { if (e.target === e.currentTarget) setIsCreateMonthOpen(false); }}
         >
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className={`border rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 ${
+            isDark ? 'bg-slate-900 border-slate-800 border-t border-t-white/10 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className={`px-6 py-4 border-b flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                <div className={`w-9 h-9 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
+                }`}>
                   <Calendar size={18} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Novo Mês de Competência</h3>
-                  <p className="text-xs text-slate-500">Crie um novo período de lançamentos</p>
+                  <h3 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Novo Mês de Competência</h3>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Crie um novo período de lançamentos</p>
                 </div>
               </div>
               <button 
                 type="button"
                 onClick={() => setIsCreateMonthOpen(false)}
-                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                  isDark ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800' : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100'
+                }`}
               >
                 <X size={18} />
               </button>
@@ -2996,22 +3500,24 @@ export default function App() {
 
             <form onSubmit={handleCreateMonth} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Mês de Competência
                 </label>
                 <select
                   value={newMonthForm.mes}
                   onChange={(e) => setNewMonthForm(prev => ({ ...prev, mes: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                  className={`w-full border text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                    isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
                 >
                   {MONTH_NAMES.map(m => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m} value={m} className={isDark ? "bg-slate-900 text-slate-100" : "bg-white text-slate-800"}>{m}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Ano
                 </label>
                 <input 
@@ -3020,13 +3526,15 @@ export default function App() {
                   onChange={(e) => setNewMonthForm(prev => ({ ...prev, ano: e.target.value }))}
                   min="2020"
                   max="2035"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                  className={`w-full border text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                    isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Meta de Vendas (Quantidade de Veículos)
                 </label>
                 <input 
@@ -3034,7 +3542,9 @@ export default function App() {
                   value={newMonthForm.meta}
                   onChange={(e) => setNewMonthForm(prev => ({ ...prev, meta: e.target.value }))}
                   min="1"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                  className={`w-full border text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                    isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
                   required
                 />
               </div>
@@ -3043,13 +3553,15 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsCreateMonthOpen(false)}
-                  className="text-slate-500 hover:text-slate-800 font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+                  className={`font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer ${
+                    isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
+                  className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer"
                 >
                   Criar e Abrir Mês
                 </button>
@@ -3062,24 +3574,30 @@ export default function App() {
       {/* Modal: Editar Competência */}
       {isEditMonthOpen && monthToEdit && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
           onClick={(e) => { if (e.target === e.currentTarget) setIsEditMonthOpen(false); }}
         >
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className={`border rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 ${
+            isDark ? 'bg-slate-900 border-slate-800 border-t border-t-white/10 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className={`px-6 py-4 border-b flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                <div className={`w-9 h-9 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
+                }`}>
                   <Pencil size={18} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Editar Competência</h3>
-                  <p className="text-xs text-slate-500">Altere o período ou a meta da competência</p>
+                  <h3 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Editar Competência</h3>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Altere o período ou a meta da competência</p>
                 </div>
               </div>
               <button 
                 type="button"
                 onClick={() => setIsEditMonthOpen(false)}
-                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                  isDark ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800' : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100'
+                }`}
               >
                 <X size={18} />
               </button>
@@ -3087,22 +3605,24 @@ export default function App() {
 
             <form onSubmit={handleUpdateMonth} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Mês de Competência
                 </label>
                 <select
                   value={editMonthForm.mes}
                   onChange={(e) => setEditMonthForm(prev => ({ ...prev, mes: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                  className={`w-full border text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                    isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
                 >
                   {MONTH_NAMES.map(m => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m} value={m} className={isDark ? "bg-slate-900 text-slate-100" : "bg-white text-slate-800"}>{m}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Ano
                 </label>
                 <input 
@@ -3111,13 +3631,15 @@ export default function App() {
                   onChange={(e) => setEditMonthForm(prev => ({ ...prev, ano: e.target.value }))}
                   min="2020"
                   max="2035"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                  className={`w-full border text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                    isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Meta de Vendas (Quantidade de Veículos)
                 </label>
                 <input 
@@ -3125,7 +3647,9 @@ export default function App() {
                   value={editMonthForm.meta}
                   onChange={(e) => setEditMonthForm(prev => ({ ...prev, meta: e.target.value }))}
                   min="1"
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                  className={`w-full border text-sm font-medium rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                    isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
                   required
                 />
               </div>
@@ -3134,13 +3658,15 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsEditMonthOpen(false)}
-                  className="text-slate-500 hover:text-slate-800 font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+                  className={`font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer ${
+                    isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
+                  className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer"
                 >
                   Salvar Alterações
                 </button>
@@ -3153,33 +3679,37 @@ export default function App() {
       {/* Modal: Confirmar Exclusão de Mês */}
       {monthToDelete && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
           onClick={(e) => { if (e.target === e.currentTarget) setMonthToDelete(null); }}
         >
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-md p-6 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
+          <div className={`border rounded-3xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200 space-y-4 ${
+            isDark ? 'bg-slate-900 border-slate-800 border-t border-t-white/10 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center justify-center shadow-inner">
               <AlertTriangle size={24} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                 Excluir mês {monthToDelete.mes} / {monthToDelete.ano}?
               </h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Todas as vendas cadastradas e cálculos desta competência serão excluídos permanentemente da nuvem e do armazenamento local. Esta ação não poderá ser desfeita.
+              <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Todas as vendas cadastradas e cálculos desta competência serão excluídos permanentemente da nuvem e do armazenamento local.
               </p>
             </div>
             <div className="pt-2 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setMonthToDelete(null)}
-                className="text-slate-500 hover:text-slate-800 font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+                className={`font-semibold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer ${
+                  isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+                }`}
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDeleteMonth}
-                className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm shadow-rose-600/20 active:scale-[0.98] cursor-pointer"
+                className="bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-rose-500/20 active:scale-[0.98] cursor-pointer"
               >
                 Sim, Excluir Mês
               </button>
@@ -3191,126 +3721,140 @@ export default function App() {
       {/* Modal: Memória de Cálculo */}
       {showCalculationModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
           onClick={(e) => { if (e.target === e.currentTarget) setShowCalculationModal(false); }}
         >
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className={`border rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 ${
+            isDark ? 'bg-slate-900 border-slate-800 border-t border-t-white/10 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className={`px-6 py-4 border-b flex items-center justify-between sticky top-0 z-10 ${
+              isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
+                <div className={`w-10 h-10 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
+                }`}>
                   <Calculator size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Memória de Cálculo</h3>
-                  <p className="text-xs text-slate-500">Detalhamento transparente da apuração da Comissão Bruta</p>
+                  <h3 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Memória de Cálculo</h3>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Detalhamento transparente da apuração da Comissão Bruta</p>
                 </div>
               </div>
               <button 
                 type="button"
                 onClick={() => setShowCalculationModal(false)}
-                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                  isDark ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800' : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100'
+                }`}
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="overflow-y-auto p-6 space-y-4 flex-1 text-xs">
-              <div className="divide-y divide-slate-100 bg-slate-50/70 border border-slate-200/80 rounded-2xl p-3.5 space-y-2.5">
+              <div className={`border rounded-2xl p-4 space-y-3 font-mono divide-y ${
+                isDark ? 'bg-slate-950/60 border-slate-800 divide-slate-800/80 text-slate-200' : 'bg-slate-50 border-slate-200 divide-slate-200 text-slate-800'
+              }`}>
                 <div className="flex items-center justify-between pt-1">
                   <div>
-                    <span className="font-semibold text-slate-800 block">1. Comissão Valor da Nota (VN)</span>
-                    <span className="text-[11px] text-slate-500">Base {formatBRL(metrics.vnBase)} × {formatPercent(metrics.vnTier)} ({metrics.volume} veículos)</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>1. Comissão Valor da Nota (VN)</span>
+                    <span className="text-[11px] text-slate-500 font-sans">Base {formatBRL(metrics.vnBase)} × {formatPercent(metrics.vnTier)} ({metrics.volume} veículos)</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionVn)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.commissionVn)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2.5">
                   <div>
-                    <span className="font-semibold text-slate-800 block">2. Comissão Margem</span>
-                    <span className="text-[11px] text-slate-500">Base {formatBRL(metrics.marginBase)} × {formatPercent(metrics.marginTier)}</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>2. Comissão Margem</span>
+                    <span className="text-[11px] text-slate-500 font-sans">Base {formatBRL(metrics.marginBase)} × {formatPercent(metrics.marginTier)}</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionMargin)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.commissionMargin)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2.5">
                   <div>
-                    <span className="font-semibold text-slate-800 block">3. Retorno F&I</span>
-                    <span className="text-[11px] text-slate-500">Base Retorno F&I ({formatBRL(metrics.fAndIBaseRetorno)}) × Acelerador SPF ({formatPercent(metrics.fAndIAccelerator)})</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>3. Retorno F&I</span>
+                    <span className="text-[11px] text-slate-500 font-sans">Base Retorno F&I ({formatBRL(metrics.fAndIBaseRetorno)}) × Acelerador SPF ({formatPercent(metrics.fAndIAccelerator)})</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionRetornoFAndI)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.commissionRetornoFAndI)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2.5">
                   <div>
-                    <span className="font-semibold text-slate-800 block">4. Comissão SPF</span>
-                    <span className="text-[11px] text-slate-500">{metrics.spfCount} contratos com SPF × R$ 100,00</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>4. Comissão SPF</span>
+                    <span className="text-[11px] text-slate-500 font-sans">{metrics.spfCount} contratos com SPF × R$ 100,00</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionSpf)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.commissionSpf)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2.5">
                   <div>
-                    <span className="font-semibold text-slate-800 block">5. Comissão Acessórios</span>
-                    <span className="text-[11px] text-slate-500">Base {formatBRL(metrics.accBase)} × {formatPercent(metrics.accTier)} (T.M.: {formatBRL(metrics.accTicketCommission)})</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>5. Comissão Acessórios</span>
+                    <span className="text-[11px] text-slate-500 font-sans">Base {formatBRL(metrics.accBase)} × {formatPercent(metrics.accTier)} (T.M.: {formatBRL(metrics.accTicketCommission)})</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionAcc)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.commissionAcc)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2.5">
                   <div>
-                    <span className="font-semibold text-slate-800 block">6. Comissão Autobox</span>
-                    <span className="text-[11px] text-slate-500">Base {formatBRL(metrics.autoboxBase)} × 4,5%</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>6. Comissão Autobox</span>
+                    <span className="text-[11px] text-slate-500 font-sans">Base {formatBRL(metrics.autoboxBase)} × 4,5%</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionAutobox)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.commissionAutobox)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2.5">
                   <div>
-                    <span className="font-semibold text-slate-800 block">7. Comissão Emplacamento</span>
-                    <span className="text-[11px] text-slate-500">Base {formatBRL(metrics.empBase)} × {formatPercent(metrics.empTier)} (Penetração: {formatPercent(metrics.empPenetration)})</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>7. Comissão Emplacamento</span>
+                    <span className="text-[11px] text-slate-500 font-sans">Base {formatBRL(metrics.empBase)} × {formatPercent(metrics.empTier)} (Penetração: {formatPercent(metrics.empPenetration)})</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionEmp)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.commissionEmp)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2.5">
                   <div>
-                    <span className="font-semibold text-slate-800 block">8. Premiações Diretas da Tabela</span>
-                    <span className="text-[11px] text-slate-500">Seguros ({formatBRL(metrics.seguroTotal)}) + Bônus ({formatBRL(metrics.bonusCarroTotal)}) + Usados C. ({formatBRL(metrics.usadosCaptadosTotal)})</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>8. Premiações Diretas da Tabela</span>
+                    <span className="text-[11px] text-slate-500 font-sans">Seguros ({formatBRL(metrics.seguroTotal)}) + Bônus ({formatBRL(metrics.bonusCarroTotal)}) + Usados C. ({formatBRL(metrics.usadosCaptadosTotal)})</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.commissionDirects)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.commissionDirects)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2.5">
                   <div>
-                    <span className="font-semibold text-slate-800 block">9. DSR (Descanso Semanal Remunerado)</span>
-                    <span className="text-[11px] text-slate-500">20% sobre (VN + Margem + Retorno F&I)</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>9. DSR (Descanso Semanal Remunerado)</span>
+                    <span className="text-[11px] text-slate-500 font-sans">20% sobre (VN + Margem + Retorno F&I)</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.dsr)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.dsr)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2.5">
                   <div>
-                    <span className="font-semibold text-slate-800 block">10. Lançamentos Extras Manuais</span>
-                    <span className="text-[11px] text-slate-500">Usados ({formatBRL(activeExtras.premioUsados)}) + Águia ({formatBRL(activeExtras.premioAguia)}) + Líder ({formatBRL(activeExtras.premioLider)}) + NPS ({formatBRL(activeExtras.premioNps)})</span>
+                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>10. Lançamentos Extras Manuais</span>
+                    <span className="text-[11px] text-slate-500 font-sans">Usados ({formatBRL(activeExtras.premioUsados)}) + Águia ({formatBRL(activeExtras.premioAguia)}) + Líder ({formatBRL(activeExtras.premioLider)}) + NPS ({formatBRL(activeExtras.premioNps)})</span>
                   </div>
-                  <span className="font-bold text-slate-900 text-sm">{formatBRL(metrics.extrasTotal)}</span>
+                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.extrasTotal)}</span>
                 </div>
               </div>
 
-              <div className="p-4 bg-sky-50/80 border border-sky-200/70 rounded-2xl flex items-center justify-between">
+              <div className="p-4 bg-sky-500/10 border border-sky-500/20 rounded-2xl flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-semibold text-sky-900 block">Total Geral Bruto Apurado</span>
-                  <span className="text-[11px] text-sky-700">Previsão Líquida ({activeNetPercentage.toFixed(2)}%): <strong>{formatBRL(metrics.netCommission)}</strong></span>
+                  <span className="text-xs font-bold text-sky-500 block">Total Geral Bruto Apurado</span>
+                  <span className="text-[11px] text-slate-500">Previsão Líquida ({activeNetPercentage.toFixed(2)}%): <strong className={isDark ? 'text-white font-mono' : 'text-slate-900 font-mono'}>{formatBRL(metrics.netCommission)}</strong></span>
                 </div>
-                <span className="text-xl font-extrabold text-sky-700">{formatBRL(metrics.grossCommission)}</span>
+                <span className="text-xl font-black text-sky-500 font-mono tabular-nums">{formatBRL(metrics.grossCommission)}</span>
               </div>
             </div>
 
-            <div className="px-6 py-3.5 bg-slate-50/80 border-t border-slate-100 flex justify-end">
+            <div className={`px-6 py-3.5 border-t flex justify-end ${
+              isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
               <button
                 type="button"
                 onClick={() => setShowCalculationModal(false)}
-                className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition-all duration-150 cursor-pointer"
+                className={`font-bold text-xs px-5 py-2.5 rounded-xl transition-all duration-150 cursor-pointer ${
+                  isDark ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                }`}
               >
                 Concluir Visualização
               </button>
@@ -3322,24 +3866,32 @@ export default function App() {
       {/* Modal: Nova Venda */}
       {isAddModalOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
           onClick={(e) => { if (e.target === e.currentTarget) setIsAddModalOpen(false); }}
         >
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className={`border rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-200 ${
+            isDark ? 'bg-slate-900 border-slate-800 border-t border-t-white/10 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className={`px-6 py-4 border-b flex items-center justify-between sticky top-0 z-10 ${
+              isDark ? 'bg-slate-900/95 border-slate-800' : 'bg-white/95 border-slate-200'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
+                <div className={`w-10 h-10 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
+                }`}>
                   <Car size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Nova Venda</h3>
-                  <p className="text-xs text-slate-500">Cadastre os valores comerciais e agregados do veículo</p>
+                  <h3 className={`text-base font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>Nova Venda</h3>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Cadastre os valores comerciais e agregados do veículo</p>
                 </div>
               </div>
               <button 
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                  isDark ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800' : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100'
+                }`}
               >
                 <X size={18} />
               </button>
@@ -3347,13 +3899,13 @@ export default function App() {
 
             <div className="overflow-y-auto p-6 space-y-5 flex-1 text-xs">
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
-                  <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+                <div className="flex items-center gap-2 text-sky-500 font-bold text-xs uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-sky-500" />
                   <span>Grupo 1: Identificação Básica</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Nome do Cliente
                     </label>
                     <input 
@@ -3361,11 +3913,13 @@ export default function App() {
                       value={newSale.client}
                       onChange={(e) => setNewSale(prev => ({ ...prev, client: e.target.value }))}
                       placeholder={`Cliente ${activeSales.length + 1}`}
-                      className="bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                      className={`border text-sm font-medium rounded-xl px-3 py-2 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                        isDark ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Modelo do Veículo
                     </label>
                     <input 
@@ -3373,23 +3927,26 @@ export default function App() {
                       value={newSale.car}
                       onChange={(e) => setNewSale(prev => ({ ...prev, car: e.target.value }))}
                       placeholder="Ex: DOLPHIN MINI GL"
-                      className="bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                      className={`border text-sm font-medium rounded-xl px-3 py-2 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 ${
+                        isDark ? 'bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
-                  <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+              <div className={`space-y-3 pt-2 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div className="flex items-center gap-2 text-sky-500 font-bold text-xs uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-sky-500" />
                   <span>Grupo 2: Valores Principais</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Valor da Nota (VN)
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.vn}
                       onChange={(val) => setNewSale(prev => ({ ...prev, vn: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3397,10 +3954,11 @@ export default function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Margem Comercial
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.margin}
                       onChange={(val) => setNewSale(prev => ({ ...prev, margin: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3410,17 +3968,18 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
-                  <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+              <div className={`space-y-3 pt-2 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div className="flex items-center gap-2 text-sky-500 font-bold text-xs uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-sky-500" />
                   <span>Grupo 3: F&I e Financiamento</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       F&I / Financiamento
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.fAndI}
                       onChange={(val) => setNewSale(prev => ({ ...prev, fAndI: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3428,13 +3987,15 @@ export default function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Retorno F&I
                     </label>
                     <select
                       value={newSale.returnFAndI}
                       onChange={(e) => setNewSale(prev => ({ ...prev, returnFAndI: e.target.value }))}
-                      className="bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-3 py-2 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 cursor-pointer"
+                      className={`border text-sm font-medium rounded-xl px-3 py-2 w-full transition-all duration-150 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 cursor-pointer ${
+                        isDark ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
+                      }`}
                     >
                       <option value="R0">R0 (0,0%)</option>
                       <option value="R1">R1 (1,2%)</option>
@@ -3444,10 +4005,11 @@ export default function App() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Valor SPF
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.spf}
                       onChange={(val) => setNewSale(prev => ({ ...prev, spf: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3457,17 +4019,18 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
-                  <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+              <div className={`space-y-3 pt-2 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div className="flex items-center gap-2 text-sky-500 font-bold text-xs uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-sky-500" />
                   <span>Grupo 4: Serviços e Acessórios Agregados</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Acessórios
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.accessories}
                       onChange={(val) => setNewSale(prev => ({ ...prev, accessories: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3475,10 +4038,11 @@ export default function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Autobox
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.autobox}
                       onChange={(val) => setNewSale(prev => ({ ...prev, autobox: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3486,10 +4050,11 @@ export default function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Emplacamento
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.emplacamento}
                       onChange={(val) => setNewSale(prev => ({ ...prev, emplacamento: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3497,10 +4062,11 @@ export default function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Seguro
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.seguro}
                       onChange={(val) => setNewSale(prev => ({ ...prev, seguro: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3510,17 +4076,18 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs uppercase tracking-wider">
-                  <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+              <div className={`space-y-3 pt-2 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div className="flex items-center gap-2 text-sky-500 font-bold text-xs uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-sky-500" />
                   <span>Grupo 5: Premiações Diretas</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Bônus Carro
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.bonusCarro}
                       onChange={(val) => setNewSale(prev => ({ ...prev, bonusCarro: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3528,10 +4095,11 @@ export default function App() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Usados Captados
                     </label>
                     <CurrencyInput 
+                      theme={theme}
                       value={newSale.usadosCaptados}
                       onChange={(val) => setNewSale(prev => ({ ...prev, usadosCaptados: val }))}
                       className="text-sm py-2 px-3 rounded-xl"
@@ -3542,18 +4110,22 @@ export default function App() {
               </div>
             </div>
 
-            <div className="px-6 py-4 bg-slate-50/90 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 sticky bottom-0 z-10">
+            <div className={`px-6 py-4 border-t flex flex-col-reverse sm:flex-row items-center justify-end gap-3 sticky bottom-0 z-10 ${
+              isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
               <button 
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="w-full sm:w-auto text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 font-semibold text-xs px-5 py-2.5 rounded-xl transition-all duration-150 cursor-pointer"
+                className={`w-full sm:w-auto font-semibold text-xs px-5 py-2.5 rounded-xl transition-all duration-150 cursor-pointer ${
+                  isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+                }`}
               >
                 Cancelar
               </button>
               <button 
                 type="button"
                 onClick={handleSaveNewSale}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-6 py-2.5 rounded-xl transition-all duration-150 shadow-sm shadow-sky-600/20 active:scale-[0.98] cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs px-6 py-2.5 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2.5} />
                 <span>Salvar Venda</span>
@@ -3563,7 +4135,7 @@ export default function App() {
         </div>
       )}
 
-      {}
+      {/* Global CSS for Print and Themes */}
       <style>{`
         @media print {
           @page {
@@ -3576,9 +4148,11 @@ export default function App() {
             box-shadow: none !important;
             text-shadow: none !important;
           }
-          html, body {
+          html, body, #root, div {
             background-color: #ffffff !important;
             color: #0f172a !important;
+          }
+          html, body {
             font-size: 8px !important;
             line-height: 1.15 !important;
             width: 100% !important;
