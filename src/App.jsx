@@ -1746,20 +1746,20 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
             </div>
           </div>
 
-          {/* Print Executive Header (Page 1 Top) */}
-          <div className="hidden print:flex items-center justify-between border-b border-slate-300 pb-2 mb-3 text-slate-900">
+          {/* Print Executive Header */}
+          <div className="hidden print:flex items-center justify-between border-b border-slate-300 pb-1.5 mb-1.5 text-slate-900">
             <div className="flex items-baseline gap-2.5">
-              <h1 className="text-base font-black tracking-tight text-slate-900 leading-none">
+              <h1 className="text-sm font-black tracking-tight text-slate-900 leading-none">
                 Relatório Executivo de Vendas & Comissões
               </h1>
-              <span className="text-[10.5px] text-slate-600 font-semibold">
+              <span className="text-[10px] text-slate-600 font-semibold">
                 Competência: <strong>{activeMonth.mes} / {activeMonth.ano}</strong>
               </span>
-              <span className="text-[9.5px] text-slate-400">
-                • Emissão: {new Date().toLocaleDateString('pt-BR')} • Página 1 de 2
+              <span className="text-[9px] text-slate-400">
+                • Emissão: {new Date().toLocaleDateString('pt-BR')}
               </span>
             </div>
-            <div className="flex items-center gap-3 text-[10px]">
+            <div className="flex items-center gap-3 text-[9.5px]">
               <span className="text-slate-600 font-medium">Meta: <strong>{activeMonth.meta}</strong> veículos</span>
               <span className="text-slate-300">|</span>
               <span className="text-slate-600">Alíquota Líquida:</span>
@@ -1769,98 +1769,98 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
             </div>
           </div>
 
-          <div className="hidden print:grid print:grid-cols-4 print:gap-4 print:mb-3 print-avoid-break">
+          <div className="hidden print:grid print:grid-cols-4 print:gap-2 print:mb-1.5 print-avoid-break">
             
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
+            <div className="bg-white border border-slate-200 rounded-xl p-2.5 flex flex-col justify-between shadow-none">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
                   Volume Total & Faixa VN
                 </span>
-                <span className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                  <Layers size={14} />
+                <span className="w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-slate-400">
+                  <Layers size={12} />
                 </span>
               </div>
-              <div className="my-1">
-                <span className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="my-0.5">
+                <span className="text-xl font-black text-slate-900 tracking-tight">
                   {metrics.volume} {metrics.volume === 1 ? 'veículo' : 'veículos'}
                 </span>
               </div>
-              <div className="border-t border-slate-100 pt-2 text-[10px] text-slate-500 flex items-center justify-between">
+              <div className="border-t border-slate-100 pt-1 text-[9px] text-slate-500 flex items-center justify-between">
                 <span>Taxa Aplicada VN:</span>
-                <span className="bg-rose-50 text-rose-700 font-bold px-2 py-0.5 rounded-full border border-rose-200">
+                <span className="bg-rose-50 text-rose-700 font-bold px-1.5 py-0.2 rounded-full border border-rose-200">
                   {formatPercent(metrics.vnTier)}
                 </span>
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
+            <div className="bg-white border border-slate-200 rounded-xl p-2.5 flex flex-col justify-between shadow-none">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
                   DSR (20%)
                 </span>
-                <span className="w-6 h-6 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                  <ShieldCheck size={14} />
+                <span className="w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-slate-400">
+                  <ShieldCheck size={12} />
                 </span>
               </div>
-              <div className="my-1">
-                <span className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="my-0.5">
+                <span className="text-xl font-black text-slate-900 tracking-tight">
                   {formatBRL(metrics.dsr)}
                 </span>
               </div>
-              <div className="border-t border-slate-100 pt-2 text-[10px] text-slate-500 flex items-center justify-between">
+              <div className="border-t border-slate-100 pt-1 text-[9px] text-slate-500 flex items-center justify-between">
                 <span>Base de Cálculo</span>
                 <span className="font-semibold text-slate-700">VN + Margem + Retorno</span>
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col justify-between shadow-none">
+            <div className="bg-white border border-slate-200 rounded-xl p-2.5 flex flex-col justify-between shadow-none">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
                   Comissão Bruta
                 </span>
-                <span className="w-6 h-6 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
-                  <Calculator size={14} />
+                <span className="w-5 h-5 rounded bg-sky-50 flex items-center justify-center text-sky-600">
+                  <Calculator size={12} />
                 </span>
               </div>
-              <div className="my-1">
-                <span className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="my-0.5">
+                <span className="text-xl font-black text-slate-900 tracking-tight">
                   {formatBRL(metrics.grossCommission)}
                 </span>
               </div>
-              <div className="border-t border-slate-100 pt-2 text-[10px] text-slate-500 flex items-center justify-between">
+              <div className="border-t border-slate-100 pt-1 text-[9px] text-slate-500 flex items-center justify-between">
                 <span>Origem</span>
                 <span className="font-semibold text-slate-700">Comissões + Extras</span>
               </div>
             </div>
 
             <div 
-              className="bg-slate-900 text-white rounded-2xl p-4 border border-slate-800 flex flex-col justify-between print-dark-card shadow-none"
+              className="bg-slate-900 text-white rounded-xl p-2.5 border border-slate-800 flex flex-col justify-between print-dark-card shadow-none"
               style={{ backgroundColor: '#0f172a', color: '#ffffff', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-sky-300">
-                  Líquido Previsto a Receber
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-sky-300">
+                  Líquido Previsto
                 </span>
-                <span className="text-[10px] font-bold text-sky-200 bg-white/10 px-2 py-0.5 rounded border border-white/10">
+                <span className="text-[9px] font-bold text-sky-200 bg-white/10 px-1.5 py-0.2 rounded border border-white/10">
                   {activeNetPercentage.toFixed(2)}%
                 </span>
               </div>
-              <div className="my-1">
-                <span className="text-2xl font-black text-sky-400 tracking-tight">
+              <div className="my-0.5">
+                <span className="text-xl font-black text-sky-400 tracking-tight">
                   {formatBRL(metrics.netCommission)}
                 </span>
               </div>
-              <div className="border-t border-white/10 pt-2 text-[10px] text-slate-300 flex items-center justify-between">
-                <span>Alíquota Líquida Base:</span>
+              <div className="border-t border-white/10 pt-1 text-[9px] text-slate-300 flex items-center justify-between">
+                <span>Alíquota Base:</span>
                 <span className="font-semibold text-white">{activeNetPercentage.toFixed(2)}%</span>
               </div>
             </div>
           </div>
 
-          {/* Print Extras Inline Strip (Page 1) */}
-          <div className="hidden print:flex items-center justify-between border border-slate-300 rounded-xl bg-slate-50/90 p-2 px-3 mb-3 text-[10px] text-slate-800 print-avoid-break">
-            <div className="flex items-center gap-4">
-              <span className="font-bold text-slate-900 uppercase tracking-wider text-[8.5px] bg-slate-200/90 px-2 py-0.5 rounded">
+          {/* Print Extras Inline Strip */}
+          <div className="hidden print:flex items-center justify-between border border-slate-300 rounded-lg bg-slate-50/90 p-1.5 px-2.5 mb-1.5 text-[9.5px] text-slate-800 print-avoid-break">
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-slate-900 uppercase tracking-wider text-[8px] bg-slate-200/90 px-1.5 py-0.5 rounded">
                 Prêmios Extras:
               </span>
               <span>Usados: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioUsados)}</strong></span>
@@ -1869,7 +1869,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
               <span>NPS: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioNps)}</strong></span>
             </div>
             <div className="font-medium text-slate-700">
-              Total Extras: <span className="font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-300">{formatBRL(metrics.extrasTotal)}</span>
+              Total Extras: <span className="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-300">{formatBRL(metrics.extrasTotal)}</span>
             </div>
           </div>
 
@@ -2056,10 +2056,10 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                 <table className="w-full min-w-full text-left text-xs whitespace-nowrap print:text-[8.5px]">
                   <thead className="bg-slate-100/60 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-semibold print:bg-slate-100 print:text-[8px] print:border-b print:border-slate-300">
                     <tr>
-                      <th className="px-3 py-3 font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-1">Cliente</th>
-                      <th className="px-3 py-3 font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-1">Carro</th>
+                      <th className="px-3 py-3 font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-0.5">Cliente</th>
+                      <th className="px-3 py-3 font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-0.5">Carro</th>
 
-                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-1">
+                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">VN (R$)</span>
                           <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
@@ -2068,7 +2068,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                         </div>
                       </th>
 
-                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-1">
+                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Margem (R$)</span>
                           <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
@@ -2077,7 +2077,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                         </div>
                       </th>
 
-                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-1">
+                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">F&I (R$)</span>
                           <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
@@ -2086,9 +2086,9 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                         </div>
                       </th>
 
-                      <th className="px-3 py-3 text-center font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-1">Retorno</th>
+                      <th className="px-3 py-3 text-center font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-0.5">Retorno</th>
                       
-                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-1">
+                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Valor SPF</span>
                           <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
@@ -2097,7 +2097,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                         </div>
                       </th>
 
-                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-1">
+                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Acessórios</span>
                           <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
@@ -2106,7 +2106,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                         </div>
                       </th>
 
-                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-1">
+                      <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Autobox</span>
                           <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
@@ -2115,10 +2115,10 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                         </div>
                       </th>
 
-                      <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-1">Emplac.</th>
-                      <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-1">Seguro</th>
-                      <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-1">Bônus</th>
-                      <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-1">Usados C.</th>
+                      <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-0.5">Emplac.</th>
+                      <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-0.5">Seguro</th>
+                      <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-0.5">Bônus</th>
+                      <th className="px-3 py-3 text-right font-semibold text-slate-700 print:text-slate-900 print:px-1.5 print:py-0.5">Usados C.</th>
                       <th className="px-2 py-3 text-center font-semibold text-slate-700 print:hidden w-12">Ações</th>
                     </tr>
                   </thead>
@@ -2154,7 +2154,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                           key={sale.id} 
                           className="hover:bg-slate-50/70 transition-colors duration-150 group print:hover:bg-transparent print:border-b print:border-slate-200"
                         >
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <input 
                               type="text" 
                               value={sale.client} 
@@ -2164,7 +2164,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <input 
                               type="text" 
                               value={sale.car} 
@@ -2174,7 +2174,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.vn} 
@@ -2182,7 +2182,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.margin} 
@@ -2190,7 +2190,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.fAndI} 
@@ -2198,7 +2198,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1 text-center">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5 text-center">
                             <select 
                               value={sale.returnFAndI} 
                               onChange={(e) => handleSaleChange(sale.id, 'returnFAndI', e.target.value)}
@@ -2212,7 +2212,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             </select>
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.spf} 
@@ -2220,7 +2220,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.accessories} 
@@ -2228,7 +2228,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.autobox} 
@@ -2236,7 +2236,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.emplacamento} 
@@ -2244,7 +2244,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.seguro} 
@@ -2252,7 +2252,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.bonusCarro} 
@@ -2260,7 +2260,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           </td>
 
-                          <td className="px-2 py-2 print:px-1.5 print:py-1">
+                          <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                             <CurrencyInput 
                               className="w-28 min-w-[115px] text-right text-xs" 
                               value={sale.usadosCaptados} 
@@ -2620,181 +2620,171 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
             </div>
           </section>
 
-          <div className="hidden print:block print-page-break print:break-before-page pt-3">
+          {/* Print Bottom Section: Memória de Cálculo + Gráficos de Auditoria (Terço inferior da folha única) */}
+          <div className="hidden print:grid print:grid-cols-12 print:gap-2 print:mt-1.5 print:mb-0 print-avoid-break">
             
-            <div className="flex items-center justify-between border-b border-slate-300 pb-2 mb-3 text-slate-900 print-avoid-break">
-              <div className="flex items-baseline gap-2.5">
-                <h2 className="text-base font-black tracking-tight text-slate-900 leading-none">
-                  Auditoria & Inteligência Estratégica
-                </h2>
-                <span className="text-[10.5px] text-slate-600 font-semibold">
-                  Competência: <strong>{activeMonth.mes} / {activeMonth.ano}</strong>
-                </span>
-                <span className="text-[9.5px] text-slate-400">• Página 2 de 2</span>
-              </div>
-              <div className="text-[10px] text-slate-600">
-                Comissão Bruta Consolidada: <strong className="text-slate-900 font-black">{formatBRL(metrics.grossCommission)}</strong>
-              </div>
-            </div>
-
-            <div className="border border-slate-200 rounded-2xl bg-white p-4 mb-4 print-avoid-break">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2 text-slate-900">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded bg-sky-50 text-sky-600 flex items-center justify-center">
-                    <Calculator size={13} />
-                  </div>
-                  <h3 className="text-[10.5px] font-bold tracking-tight text-slate-900 uppercase">
-                    Memória de Cálculo — Detalhamento transparente da apuração da Comissão Bruta
-                  </h3>
-                </div>
-                <span className="text-[8.5px] text-slate-500 font-semibold">
-                  Regras Contratuais & Índices Reativos
-                </span>
-              </div>
-
-              <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-3 text-[9.5px]">
-                <div className="grid grid-cols-2 gap-x-6">
-                  
-                  <div className="space-y-1.5 divide-y divide-slate-100">
-                    <div className="flex items-center justify-between pt-1">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">1. Comissão Valor da Nota (VN)</span>
-                        <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.vnBase)} × {formatPercent(metrics.vnTier)} ({metrics.volume} veículos)</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.commissionVn)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1.5">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">2. Comissão Margem</span>
-                        <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.marginBase)} × {formatPercent(metrics.marginTier)}</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.commissionMargin)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1.5">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">3. Retorno F&I</span>
-                        <span className="text-[8.5px] text-slate-500">Base Retorno F&I ({formatBRL(metrics.fAndIBaseRetorno)}) × Acelerador SPF ({formatPercent(metrics.fAndIAccelerator)})</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.commissionRetornoFAndI)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1.5">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">4. Comissão SPF</span>
-                        <span className="text-[8.5px] text-slate-500">{metrics.spfCount} contratos com SPF × R$ 100,00</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.commissionSpf)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1.5">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">5. Comissão Acessórios</span>
-                        <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.accBase)} × {formatPercent(metrics.accTier)} (T.M.: {formatBRL(metrics.accTicketCommission)})</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.commissionAcc)}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 divide-y divide-slate-100">
-                    <div className="flex items-center justify-between pt-1">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">6. Comissão Autobox</span>
-                        <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.autoboxBase)} × 4,5%</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.commissionAutobox)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1.5">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">7. Comissão Emplacamento</span>
-                        <span className="text-[8.5px] text-slate-500">Base {formatBRL(metrics.empBase)} × {formatPercent(metrics.empTier)} (Penetração: {formatPercent(metrics.empPenetration)})</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.commissionEmp)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1.5">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">8. Premiações Diretas da Tabela</span>
-                        <span className="text-[8.5px] text-slate-500">Seguros ({formatBRL(metrics.seguroTotal)}) + Bônus ({formatBRL(metrics.bonusCarroTotal)}) + Usados C. ({formatBRL(metrics.usadosCaptadosTotal)})</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.commissionDirects)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1.5">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">9. DSR (Descanso Semanal Remunerado)</span>
-                        <span className="text-[8.5px] text-slate-500">20% sobre (VN + Margem + Retorno F&I)</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.dsr)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1.5">
-                      <div>
-                        <span className="font-semibold text-slate-800 block">10. Lançamentos Extras Manuais</span>
-                        <span className="text-[8.5px] text-slate-500">Usados ({formatBRL(activeExtras.premioUsados)}) + Águia ({formatBRL(activeExtras.premioAguia)}) + Líder ({formatBRL(activeExtras.premioLider)}) + NPS ({formatBRL(activeExtras.premioNps)})</span>
-                      </div>
-                      <span className="font-bold text-slate-900">{formatBRL(metrics.extrasTotal)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5 px-3 flex justify-between items-center mt-2.5">
-                  <div>
-                    <span className="text-[10px] font-bold text-sky-950 block">Total Geral Bruto Apurado</span>
-                    <span className="text-[9px] text-sky-700">
-                      Previsão Líquida ({activeNetPercentage.toFixed(2)}%): <strong className="font-bold text-slate-900">{formatBRL(metrics.netCommission)}</strong>
-                    </span>
-                  </div>
-                  <span className="text-lg font-black text-sky-700">{formatBRL(metrics.grossCommission)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 print-avoid-break">
-              <div className="border border-slate-200 rounded-2xl p-3.5 bg-white">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2">
+            {/* Bloco 1: Memória de Cálculo (6 colunas) */}
+            <div className="print:col-span-6 border border-slate-200 rounded-xl bg-white p-2.5 flex flex-col justify-between print-avoid-break">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-1.5 text-slate-900">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded bg-sky-50 text-sky-600 flex items-center justify-center">
-                      <BarChart3 size={12} />
+                    <div className="w-4 h-4 rounded bg-sky-50 text-sky-600 flex items-center justify-center">
+                      <Calculator size={11} />
                     </div>
-                    <h4 className="text-[10px] font-bold text-slate-900 uppercase">
-                      Volume por Modelo (Mix Comercial)
-                    </h4>
+                    <h3 className="text-[9.5px] font-bold tracking-tight text-slate-900 uppercase">
+                      Memória de Cálculo — Apuração da Comissão Bruta
+                    </h3>
                   </div>
-                  <span className="text-[8px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
-                    {modelVolumeData.length} modelos
+                  <span className="text-[8px] text-slate-500 font-semibold">
+                    Regras Contratuais
                   </span>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="bg-slate-50/70 border border-slate-200 rounded-lg p-2 text-[8.5px]">
+                  <div className="grid grid-cols-2 gap-x-4">
+                    
+                    <div className="space-y-1 divide-y divide-slate-100">
+                      <div className="flex items-center justify-between pt-0.5">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">1. Valor da Nota (VN)</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.vnBase)} × {formatPercent(metrics.vnTier)}</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionVn)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">2. Margem</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.marginBase)} × {formatPercent(metrics.marginTier)}</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionMargin)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">3. Retorno F&I</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.fAndIBaseRetorno)} × {formatPercent(metrics.fAndIAccelerator)}</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionRetornoFAndI)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">4. SPF</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">{metrics.spfCount} contr. × R$ 100,00</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionSpf)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">5. Acessórios</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.accBase)} × {formatPercent(metrics.accTier)}</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionAcc)}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 divide-y divide-slate-100">
+                      <div className="flex items-center justify-between pt-0.5">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">6. Autobox</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.autoboxBase)} × 4,5%</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionAutobox)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">7. Emplacamento</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.empBase)} × {formatPercent(metrics.empTier)}</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionEmp)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">8. Premiações Diretas</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">Seguro + Bônus + Usados C.</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionDirects)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">9. DSR (20%)</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">20% s/ VN + Margem + Retorno</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.dsr)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="truncate pr-1">
+                          <span className="font-semibold text-slate-800 block truncate">10. Extras Manuais</span>
+                          <span className="text-[7.5px] text-slate-500 truncate block">Usados + Águia + Líder + NPS</span>
+                        </div>
+                        <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.extrasTotal)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-sky-50 border border-sky-200 rounded-lg p-1.5 px-2.5 flex justify-between items-center mt-1.5">
+                <div>
+                  <span className="text-[9px] font-bold text-sky-950 block leading-tight">Total Geral Bruto Apurado</span>
+                  <span className="text-[8px] text-sky-700 leading-tight">
+                    Previsão Líquida ({activeNetPercentage.toFixed(2)}%): <strong className="font-bold text-slate-900">{formatBRL(metrics.netCommission)}</strong>
+                  </span>
+                </div>
+                <span className="text-base font-black text-sky-700">{formatBRL(metrics.grossCommission)}</span>
+              </div>
+            </div>
+
+            {/* Bloco 2: Volume por Modelo (3 colunas) */}
+            <div className="print:col-span-3 border border-slate-200 rounded-xl p-2.5 bg-white flex flex-col justify-between print-avoid-break">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-1.5 text-slate-900">
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 rounded bg-sky-50 text-sky-600 flex items-center justify-center">
+                      <BarChart3 size={11} />
+                    </div>
+                    <h4 className="text-[9px] font-bold text-slate-900 uppercase">
+                      Volume por Modelo
+                    </h4>
+                  </div>
+                  <span className="text-[7.5px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded">
+                    {modelVolumeData.length} mod.
+                  </span>
+                </div>
+
+                <div className="space-y-1">
                   {modelVolumeData.length === 0 ? (
-                    <div className="py-8 text-center text-[9px] text-slate-400">
+                    <div className="py-4 text-center text-[8px] text-slate-400">
                       Nenhum modelo cadastrado
                     </div>
                   ) : (
-                    modelVolumeData.slice(0, 6).map((item, idx) => {
+                    modelVolumeData.slice(0, 5).map((item, idx) => {
                       const maxCount = modelVolumeData[0]?.count || 1;
                       const barWidth = Math.max(10, (item.count / maxCount) * 100);
 
                       return (
-                        <div key={item.model} className="p-1 px-1.5 rounded-lg border border-slate-100 bg-slate-50/50">
-                          <div className="flex items-center justify-between text-[8.5px] mb-0.5">
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-3.5 h-3.5 rounded bg-slate-200 text-slate-800 text-[7px] font-bold flex items-center justify-center">
+                        <div key={item.model} className="p-0.5 px-1 rounded border border-slate-100 bg-slate-50/50">
+                          <div className="flex items-center justify-between text-[8px] mb-0.5">
+                            <div className="flex items-center gap-1 min-w-0 pr-1 truncate">
+                              <span className="w-3 h-3 rounded bg-slate-200 text-slate-800 text-[6.5px] font-bold flex items-center justify-center shrink-0">
                                 #{idx + 1}
                               </span>
-                              <span className="font-bold text-slate-800">{item.model}</span>
+                              <span className="font-bold text-slate-800 truncate">{item.model}</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-black text-slate-900">{item.count} unid.</span>
-                              <span className="text-[7.5px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100">
-                                {item.percentage.toFixed(1).replace('.', ',')}%
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="font-black text-slate-900">{item.count} un.</span>
+                              <span className="text-[7px] font-bold text-sky-700 bg-sky-50 px-1 py-0.2 rounded border border-sky-100">
+                                {item.percentage.toFixed(0)}%
                               </span>
                             </div>
                           </div>
-                          <div className="w-full bg-slate-200/80 rounded-full h-1.5 overflow-hidden">
+                          <div className="w-full bg-slate-200/80 rounded-full h-1 overflow-hidden">
                             <div 
                               style={{ width: `${barWidth}%` }}
                               className="h-full rounded-full bg-sky-600"
@@ -2806,31 +2796,34 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                   )}
                 </div>
               </div>
+            </div>
 
-              <div className="border border-slate-200 rounded-2xl p-3.5 bg-white">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-1.5 mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                      <PieChart size={12} />
+            {/* Bloco 3: Composição da Comissão Bruta (3 colunas) */}
+            <div className="print:col-span-3 border border-slate-200 rounded-xl p-2.5 bg-white flex flex-col justify-between print-avoid-break">
+              <div>
+                <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-1.5 text-slate-900">
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                      <PieChart size={11} />
                     </div>
-                    <h4 className="text-[10px] font-bold text-slate-900 uppercase">
-                      Composição da Comissão Bruta
+                    <h4 className="text-[9px] font-bold text-slate-900 uppercase">
+                      Composição Bruta
                     </h4>
                   </div>
-                  <span className="text-[8px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">
-                    {grossCommissionSlices.length} fontes ativas
+                  <span className="text-[7.5px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded border border-indigo-100">
+                    {grossCommissionSlices.length} fontes
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 pt-1">
+                <div className="flex items-center justify-between gap-1.5 pt-0.5">
                   {grossCommissionSlices.length === 0 ? (
-                    <div className="py-8 text-center text-[9px] text-slate-400 w-full">
+                    <div className="py-4 text-center text-[8px] text-slate-400 w-full">
                       Nenhuma receita lançada
                     </div>
                   ) : (
                     <>
-                      <div className="relative w-[120px] h-[120px] shrink-0 flex items-center justify-center">
-                        <svg width="120" height="120" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
+                      <div className="relative w-[70px] h-[70px] shrink-0 flex items-center justify-center">
+                        <svg width="70" height="70" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
                           {donutGeometry.map((slice) => (
                             <path
                               key={slice.id}
@@ -2839,24 +2832,24 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                             />
                           ))}
                         </svg>
-                        <div className="absolute inset-0 m-auto w-[62px] h-[62px] rounded-full bg-white border border-slate-200 flex flex-col items-center justify-center text-center p-0.5 pointer-events-none">
-                          <span className="text-[7px] font-bold text-slate-400 uppercase leading-none">Total</span>
-                          <span className="text-[8px] font-black text-slate-900 truncate max-w-[56px] mt-0.5">
+                        <div className="absolute inset-0 m-auto w-[36px] h-[36px] rounded-full bg-white border border-slate-200 flex flex-col items-center justify-center text-center p-0.5 pointer-events-none">
+                          <span className="text-[6px] font-bold text-slate-400 uppercase leading-none">Total</span>
+                          <span className="text-[7px] font-black text-slate-900 truncate max-w-[32px] mt-0.5">
                             {formatBRL(metrics.grossCommission)}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex-1 space-y-0.5 text-[8px]">
-                        {grossCommissionSlices.map((slice) => (
-                          <div key={slice.id} className="flex items-center justify-between py-0.5 px-1 border-b border-slate-50 last:border-none">
-                            <div className="flex items-center gap-1.5 min-w-0 pr-1">
-                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                      <div className="flex-1 space-y-0.5 text-[7.5px] min-w-0">
+                        {grossCommissionSlices.slice(0, 5).map((slice) => (
+                          <div key={slice.id} className="flex items-center justify-between py-0.5 px-0.5 border-b border-slate-50 last:border-none">
+                            <div className="flex items-center gap-1 min-w-0 pr-0.5 truncate">
+                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
                               <span className="font-medium text-slate-700 truncate">{slice.shortLabel || slice.label}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
+                            <div className="flex items-center gap-0.5 shrink-0 font-mono">
                               <span className="font-bold text-slate-900">{formatBRL(slice.value)}</span>
-                              <span className="text-[7px] font-bold text-slate-500 w-6 text-right">
+                              <span className="text-[6.5px] font-bold text-slate-500 w-4 text-right">
                                 {slice.percent.toFixed(0)}%
                               </span>
                             </div>
@@ -2867,8 +2860,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                   )}
                 </div>
               </div>
-
             </div>
+
           </div>
 
         </div>
@@ -3560,7 +3553,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
           @media print {
             @page {
               size: A4 landscape;
-              margin: 6mm 8mm;
+              margin: 4mm 6mm;
             }
             * {
               -webkit-print-color-adjust: exact !important;
@@ -3574,13 +3567,10 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
               font-size: 8.5px !important;
               line-height: 1.15 !important;
               width: 100% !important;
-              height: auto !important;
+              height: 100% !important;
+              overflow: hidden !important;
               margin: 0 !important;
               padding: 0 !important;
-            }
-            .print-page-break {
-              break-before: page !important;
-              page-break-before: always !important;
             }
             .print-avoid-break {
               break-inside: avoid !important;
