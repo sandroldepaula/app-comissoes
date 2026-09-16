@@ -395,6 +395,492 @@ const computeMonthMetrics = (salesList = [], extrasObj = DEFAULT_EXTRAS, netPct 
   };
 };
 
+function MonthlyPerformanceChart({ months = [], salesByMonth = {}, formatBRL, isDark, onSelectMonth }) {
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
+  const timelineData = useMemo(() => {
+    const list = [];
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+    const count = 10;
+    const MONTH_ABBR = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+    for (let i = count - 1; i >= 0; i--) {
+      const d = new Date(curYear, curMonth - i, 1);
+      const mIdx = d.getMonth();
+      const yr = d.getFullYear();
+      const mName = MONTH_NAMES[mIdx];
+      const abbr = MONTH_ABBR[mIdx];
+
+      const foundMonth = months.find(m => {
+        const mesEqual = (m.mes || '').trim().toLowerCase() === mName.toLowerCase();
+        const anoEqual = String(m.ano).trim() === String(yr);
+        return mesEqual && anoEqual;
+      });
+
+      let volume = 0;
+      let grossCommission = 0;
+      let netCommission = 0;
+      let hasData = false;
+      let monthId = null;
+
+      if (foundMonth) {
+        hasData = true;
+        monthId = foundMonth.id;
+        const sales = salesByMonth[foundMonth.id] || [];
+        const mMetrics = computeMonthMetrics(sales, foundMonth.extras || DEFAULT_EXTRAS, foundMonth.netPercentage ?? 69.0);
+        volume = mMetrics.volume;
+        grossCommission = mMetrics.grossCommission;
+        netCommission = mMetrics.netCommission;
+      }
+
+      list.push({
+        index: count - 1 - i,
+        monthName: mName,
+        abbr,
+        year: yr,
+        label: `${abbr}/${String(yr).slice(-2)}`,
+        fullLabel: `${mName} de ${yr}`,
+        volume,
+        grossCommission,
+        netCommission,
+        hasData,
+        monthId,
+        isCurrentMonth: i === 0
+      });
+    }
+    return list;
+  }, [months, salesByMonth]);
+
+  const chartWidth = 920;
+  const chartHeight = 240;
+  const padLeft = 45;
+  const padRight = 78;
+  const padTop = 20;
+  const padBottom = 34;
+  const plotW = chartWidth - padLeft - padRight;
+  const plotH = chartHeight - padTop - padBottom;
+  const bottomY = padTop + plotH; // yZero (linha de base 0)
+
+  // Escalas padronizadas de 4 linhas de grade com teto fixo
+  const maxVolume = 30;
+  const maxSalary = 30000;
+
+  const points = useMemo(() => {
+    const n = timelineData.length;
+    return timelineData.map((d, i) => {
+      const x = padLeft + (i / (n - 1)) * plotW;
+      // Cálculo Y independente para Veículos (Eixo Esquerdo: 0 a 30)
+      const yVol = bottomY - (Math.min(d.volume, maxVolume) / maxVolume) * plotH;
+      // Cálculo Y independente para Salário Bruto (Eixo Direito: R$ 0 a R$ 30.000)
+      const yGross = bottomY - (Math.min(d.grossCommission, maxSalary) / maxSalary) * plotH;
+      return { ...d, x, yVol, yGross };
+    });
+  }, [timelineData, plotW, plotH, bottomY, maxVolume, maxSalary]);
+
+  const createSmoothLine = (pts, keyY, rawValKey) => {
+    if (!pts || pts.length === 0) return '';
+    if (pts.length === 1) return `M ${pts[0].x.toFixed(1)},${pts[0][keyY].toFixed(1)}`;
+    let d = `M ${pts[0].x.toFixed(1)},${pts[0][keyY].toFixed(1)}`;
+
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i === 0 ? 0 : i - 1];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2] || p2;
+
+      const val1 = p1[rawValKey] || 0;
+      const val2 = p2[rawValKey] || 0;
+      const isBothZero = val1 === 0 && val2 === 0;
+
+      // Se ambos os meses consecutivos forem zero, traça reta direta na linha de base
+      if (isBothZero) {
+        d += ` L ${p2.x.toFixed(1)},${bottomY.toFixed(1)}`;
+      } else {
+        let cp1x = p1.x + (p2.x - p0.x) / 6;
+        let cp1y = p1[keyY] + (p2[keyY] - p0[keyY]) / 6;
+        let cp2x = p2.x - (p3.x - p1.x) / 6;
+        let cp2y = p2[keyY] - (p3[keyY] - p1[keyY]) / 6;
+
+        // Trava matemática (clamp): impede que os pontos de controle desçam abaixo de bottomY (zero) ou acima de padTop
+        cp1y = Math.min(bottomY, Math.max(padTop, cp1y));
+        cp2y = Math.min(bottomY, Math.max(padTop, cp2y));
+        const destY = Math.min(bottomY, Math.max(padTop, p2[keyY]));
+
+        d += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${destY.toFixed(1)}`;
+      }
+    }
+    return d;
+  };
+
+  const lineVolPath = useMemo(() => createSmoothLine(points, 'yVol', 'volume'), [points, bottomY, padTop]);
+  const lineGrossPath = useMemo(() => createSmoothLine(points, 'yGross', 'grossCommission'), [points, bottomY, padTop]);
+
+  const areaVolPath = useMemo(() => {
+    if (points.length === 0) return '';
+    return `${lineVolPath} L ${points[points.length - 1].x.toFixed(1)},${bottomY} L ${points[0].x.toFixed(1)},${bottomY} Z`;
+  }, [lineVolPath, points, bottomY]);
+
+  const areaGrossPath = useMemo(() => {
+    if (points.length === 0) return '';
+    return `${lineGrossPath} L ${points[points.length - 1].x.toFixed(1)},${bottomY} L ${points[0].x.toFixed(1)},${bottomY} Z`;
+  }, [lineGrossPath, points, bottomY]);
+
+  const handlePointSelect = (pt) => {
+    if (selectedPoint?.label === pt.label) {
+      setSelectedPoint(null);
+    } else {
+      setSelectedPoint(pt);
+    }
+  };
+
+  return (
+    <div className={`rounded-3xl p-6 md:p-7 shadow-2xl transition-colors relative overflow-hidden border ${
+      isDark
+        ? 'bg-slate-900/80 backdrop-blur-xl border-slate-800/80 border-t border-t-white/10 shadow-black/50 text-slate-100'
+        : 'bg-white border-slate-200/90 shadow-slate-200 text-slate-800'
+    }`}>
+      {/* Header and Legends */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 mb-4 border-slate-800/60">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-xl border flex items-center justify-center text-sky-400 shadow-inner ${
+              isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200 text-sky-600'
+            }`}>
+              <TrendingUp size={16} />
+            </div>
+            <h3 className={`text-base md:text-lg font-black tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              Desempenho de Vendas & Comissões
+            </h3>
+            <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              (Comparativo Mensal)
+            </span>
+          </div>
+          <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Linha do tempo dinâmica dos últimos 10 meses apurados terminando na competência atual
+          </p>
+        </div>
+
+        {/* Legend Indicators with Triangle and Circle Glyphs */}
+        <div className={`flex items-center flex-wrap gap-4 text-xs transition-opacity duration-200 ${
+          selectedPoint ? 'md:opacity-0 md:pointer-events-none' : 'opacity-100'
+        }`}>
+          <div className="flex items-center gap-2">
+            <svg width="12" height="12" viewBox="0 0 12 12" className="shrink-0 overflow-visible">
+              <polygon points="6,1 1,11 11,11" fill="#38bdf8" stroke={isDark ? "#0284c7" : "#0284c7"} strokeWidth="1" />
+            </svg>
+            <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              Veículos Faturados <span className="text-[10px] text-slate-500">(Eixo Esq. 0 a 30)</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-300 shadow-xs shrink-0" />
+            <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              Salário Bruto com DSR <span className="text-[10px] text-slate-500">(Eixo Dir. R$ 0 a 30k)</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Repositioned Compact 3-KPI Floating Card (Top-Right on Desktop) */}
+      {selectedPoint && (
+        <div className={`mb-4 md:mb-0 md:absolute md:top-3.5 md:right-5 z-20 w-full md:w-auto p-2.5 rounded-2xl border shadow-xl backdrop-blur-md flex flex-col gap-2 transition-all animate-in fade-in zoom-in-95 duration-150 ${
+          isDark
+            ? 'bg-slate-900/95 border-slate-800 text-slate-100 shadow-black/80'
+            : 'bg-white/95 border-slate-200 text-slate-800 shadow-slate-300/60'
+        }`}>
+          <div className="flex items-center justify-between gap-3 border-b pb-1.5 border-slate-800/60">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse shrink-0" />
+              <span className={`text-xs font-bold truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                {selectedPoint.fullLabel}
+              </span>
+              {selectedPoint.isCurrentMonth && (
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0">
+                  Atual
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {selectedPoint.hasData && onSelectMonth && (
+                <button
+                  type="button"
+                  onClick={() => onSelectMonth(selectedPoint.monthId)}
+                  className="inline-flex items-center gap-0.5 text-[11px] font-bold text-sky-400 hover:text-sky-300 hover:underline cursor-pointer"
+                >
+                  <span>Abrir</span>
+                  <ChevronRight size={12} />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setSelectedPoint(null)}
+                className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                  isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100'
+                }`}
+                title="Fechar seleção"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            {/* Card 1: Veículos */}
+            <div className={`p-1.5 px-2.5 rounded-xl border flex flex-col min-w-[72px] ${
+              isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <span className="text-[10px] uppercase font-semibold text-slate-400 leading-tight">
+                Veículos
+              </span>
+              <span className="text-xs font-bold text-sky-400 tabular-nums mt-0.5">
+                {selectedPoint.volume} {selectedPoint.volume === 1 ? 'veículo' : 'veículos'}
+              </span>
+            </div>
+
+            {/* Card 2: Salário Bruto */}
+            <div className={`p-1.5 px-2.5 rounded-xl border flex flex-col min-w-[95px] ${
+              isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <span className="text-[10px] uppercase font-semibold text-slate-400 leading-tight">
+                Salário Bruto
+              </span>
+              <span className="text-xs font-bold text-amber-400 tabular-nums mt-0.5">
+                {formatBRL(selectedPoint.grossCommission)}
+              </span>
+            </div>
+
+            {/* Card 3: Salário Líquido */}
+            <div className={`p-1.5 px-2.5 rounded-xl border flex flex-col min-w-[95px] ${
+              isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <span className="text-[10px] uppercase font-semibold text-slate-400 leading-tight">
+                Líquido
+              </span>
+              <span className="text-xs font-bold text-emerald-400 tabular-nums mt-0.5">
+                {formatBRL(selectedPoint.netCommission)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SVG Chart Area */}
+      <div className="w-full overflow-x-auto pb-1">
+        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full min-w-[660px] h-auto overflow-visible select-none">
+          <defs>
+            <linearGradient id="volGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity={isDark ? "0.28" : "0.22"} />
+              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.0" />
+            </linearGradient>
+            <linearGradient id="grossGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f59e0b" stopOpacity={isDark ? "0.25" : "0.18"} />
+              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+
+          {}
+          {/* 4 Linhas de Grade e Rótulos Padronizados (0%, 33.3%, 66.6%, 100%) */}
+          {[
+            { ratio: 1.0, vol: 30, gross: 'R$ 30k' },
+            { ratio: 2 / 3, vol: 20, gross: 'R$ 20k' },
+            { ratio: 1 / 3, vol: 10, gross: 'R$ 10k' },
+            { ratio: 0.0, vol: 0, gross: 'R$ 0' }
+          ].map((step, idx) => {
+            const y = padTop + plotH * (1 - step.ratio);
+
+            return (
+              <g key={idx}>
+                <line
+                  x1={padLeft}
+                  y1={y}
+                  x2={padLeft + plotW}
+                  y2={y}
+                  stroke={isDark ? "#334155" : "#e2e8f0"}
+                  strokeDasharray="4 4"
+                  strokeWidth="1"
+                />
+                {/* Eixo Esquerdo: Veículos (0, 10, 20, 30) */}
+                <text
+                  x={padLeft - 8}
+                  y={y + 3.5}
+                  textAnchor="end"
+                  className="text-[10px] font-mono font-semibold"
+                  fill={isDark ? "#38bdf8" : "#0284c7"}
+                >
+                  {step.vol}
+                </text>
+                {/* Eixo Direito: Salário Bruto (R$ 0, R$ 10k, R$ 20k, R$ 30k) */}
+                <text
+                  x={padLeft + plotW + 8}
+                  y={y + 3.5}
+                  textAnchor="start"
+                  className="text-[10px] font-mono font-semibold"
+                  fill={isDark ? "#fbbf24" : "#d97706"}
+                >
+                  {step.gross}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Shaded Area Fills */}
+          <path d={areaVolPath} fill="url(#volGradient)" />
+          <path d={areaGrossPath} fill="url(#grossGradient)" />
+
+          {/* Polyline Curves */}
+          <path
+            d={lineVolPath}
+            fill="none"
+            stroke="#38bdf8"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d={lineGrossPath}
+            fill="none"
+            stroke="#f59e0b"
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {}
+          {/* Interactive Column Hover Bands, Static Markers & Jitter-Free Targets */}
+          {points.map((pt, i) => {
+            const isHovered = hoveredIdx === i;
+            const isSelected = selectedPoint?.label === pt.label;
+            const colWidth = plotW / (points.length - 1);
+
+            return (
+              <g key={pt.label}>
+                {/* Clickable transparent column band */}
+                <rect
+                  x={pt.x - colWidth / 2}
+                  y={padTop}
+                  width={colWidth}
+                  height={plotH}
+                  fill={isSelected ? (isDark ? "rgba(56,189,248,0.12)" : "rgba(2,132,199,0.08)") : isHovered ? (isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)") : "transparent"}
+                  className="cursor-pointer transition-colors"
+                  onMouseEnter={() => setHoveredIdx(i)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  onClick={() => handlePointSelect(pt)}
+                />
+
+                {/* Vertical dash line on selection/hover */}
+                {(isHovered || isSelected) && (
+                  <line
+                    x1={pt.x}
+                    y1={padTop}
+                    x2={pt.x}
+                    y2={bottomY}
+                    stroke={isSelected ? "#38bdf8" : (isDark ? "#475569" : "#cbd5e1")}
+                    strokeWidth={isSelected ? "1.8" : "1"}
+                    strokeDasharray="3 3"
+                    className="pointer-events-none"
+                  />
+                )}
+
+                {/* Glow ring on selection (static, zero hover resize) */}
+                {isSelected && (
+                  <>
+                    <circle
+                      cx={pt.x}
+                      cy={pt.yVol}
+                      r="10"
+                      fill="rgba(56,189,248,0.22)"
+                      className="pointer-events-none"
+                    />
+                    <circle
+                      cx={pt.x}
+                      cy={pt.yGross}
+                      r="10"
+                      fill="rgba(245,158,11,0.22)"
+                      className="pointer-events-none"
+                    />
+                  </>
+                )}
+
+                {/* Marker 1: Veículos Faturados (Triângulo Sky Blue) - Pointer-events none */}
+                <polygon
+                  points={`${pt.x},${pt.yVol - 5.5} ${pt.x - 5},${pt.yVol + 3.5} ${pt.x + 5},${pt.yVol + 3.5}`}
+                  fill="#38bdf8"
+                  stroke={isDark ? "#0f172a" : "#ffffff"}
+                  strokeWidth={isSelected ? 2.5 : 2}
+                  className="pointer-events-none"
+                />
+
+                {/* Invisible stable hit-target for Triangle (r=16, fixed dimension) */}
+                <circle
+                  cx={pt.x}
+                  cy={pt.yVol}
+                  r="16"
+                  fill="transparent"
+                  className="cursor-pointer"
+                  onMouseEnter={() => setHoveredIdx(i)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  onClick={() => handlePointSelect(pt)}
+                />
+
+                {/* Marker 2: Salário Bruto (Círculo Âmbar/Gold) - Pointer-events none */}
+                <circle
+                  cx={pt.x}
+                  cy={pt.yGross}
+                  r={isSelected ? 5 : 4.5}
+                  fill="#f59e0b"
+                  stroke={isDark ? "#0f172a" : "#ffffff"}
+                  strokeWidth={isSelected ? 2.5 : 2}
+                  className="pointer-events-none"
+                />
+
+                {/* Invisible stable hit-target for Circle (r=16, fixed dimension) */}
+                <circle
+                  cx={pt.x}
+                  cy={pt.yGross}
+                  r="16"
+                  fill="transparent"
+                  className="cursor-pointer"
+                  onMouseEnter={() => setHoveredIdx(i)}
+                  onMouseLeave={() => setHoveredIdx(null)}
+                  onClick={() => handlePointSelect(pt)}
+                />
+
+                {/* Bottom Month Label */}
+                <text
+                  x={pt.x}
+                  y={bottomY + 20}
+                  textAnchor="middle"
+                  className={`text-[11px] font-semibold cursor-pointer ${
+                    pt.isCurrentMonth
+                      ? 'font-extrabold fill-sky-400 font-sans'
+                      : isSelected
+                      ? isDark ? 'fill-white font-bold' : 'fill-slate-900 font-bold'
+                      : isDark ? 'fill-slate-400' : 'fill-slate-500'
+                  }`}
+                  onClick={() => handlePointSelect(pt)}
+                >
+                  {pt.abbr}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      <div className={`mt-2 pt-2 border-t flex items-center justify-between text-[11px] ${
+        isDark ? 'border-slate-800/80 text-slate-400' : 'border-slate-100 text-slate-500'
+      }`}>
+        <span>Clique sobre qualquer ponto ou mês da régua para expandir o resumo detalhado</span>
+        <span className="font-semibold">Período ativo: {timelineData[0]?.label} → {timelineData[timelineData.length - 1]?.label}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   useInjectGoogleFont();
 
@@ -1652,19 +2138,31 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3 relative z-10">
-            <button
-              type="button"
-              onClick={() => setIsCreateMonthOpen(true)}
-              className="inline-flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs md:text-sm px-5 py-3 rounded-2xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer"
-            >
-              <Plus size={18} strokeWidth={2.5} />
-              <span>Criar Novo Mês</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsCreateMonthOpen(true)}
+            className="inline-flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs md:text-sm px-5 py-3 rounded-2xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer"
+          >
+            <Plus size={18} strokeWidth={2.5} />
+            <span>Criar Novo Mês</span>
+          </button>
         </div>
+      </div>
 
-        {/* Competencies Grid */}
-        {months.length === 0 ? (
+      {/* Monthly Performance Comparative Chart */}
+      <MonthlyPerformanceChart
+        months={months}
+        salesByMonth={salesByMonth}
+        formatBRL={formatBRL}
+        isDark={isDark}
+        onSelectMonth={(monthId) => {
+          setSelectedMonthId(monthId);
+          setCurrentScreen('DETAIL');
+        }}
+      />
+
+      {/* Competencies Grid */}
+      {months.length === 0 ? (
           <div className={`rounded-3xl p-12 text-center shadow-2xl transition-colors ${
             isDark
               ? 'bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10'
