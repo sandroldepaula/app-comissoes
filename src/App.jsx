@@ -22,6 +22,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
     Calendar, 
     Target, 
     ChevronRight, 
+    ChevronDown,
+    ChevronUp,
     AlertTriangle,
     User,
     LogOut,
@@ -538,6 +540,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
       meta: 15
     });
 
+    const [isSalesCollapsed, setIsSalesCollapsed] = useState(false);
     const [activeDonutSlice, setActiveDonutSlice] = useState(null);
     const [activeModelBar, setActiveModelBar] = useState(null);
     const [newSale, setNewSale] = useState(DEFAULT_SALE);
@@ -1873,6 +1876,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
             </div>
           </div>
 
+          {}
           <section className="w-full print:hidden">
             <div className="w-full px-6 sm:px-8 pt-6 flex items-center justify-between">
               <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
@@ -1884,10 +1888,11 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
               </div>
             </div>
 
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 px-6 sm:px-8 mt-4">
+            <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-6 sm:px-8 mt-4">
+              {/* Card 1: Volume Total & Gatilho da Comissão */}
               <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200 relative overflow-hidden group">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-500">Volume Total & Faixa VN</span>
+                  <span className="text-sm font-medium text-slate-500">Volume Total & Gatilho da Comissão</span>
                   <span className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-sky-600 transition-colors">
                     <Layers size={16} />
                   </span>
@@ -1904,26 +1909,11 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200 group">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-500">DSR (20%)</span>
-                  <span className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-sky-600 transition-colors">
-                    <ShieldCheck size={16} />
-                  </span>
-                </div>
-                <div className="mt-4">
-                  <span className="text-3xl font-extrabold text-slate-900 tracking-tight">{formatBRL(metrics.dsr)}</span>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium flex items-center justify-between">
-                  <span>Base de Cálculo</span>
-                  <span className="text-slate-700 font-semibold">VN + Margem + Retorno</span>
-                </div>
-              </div>
-
+              {/* Card 2: Salário Bruto com DSR (20%) */}
               <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-shadow duration-200 relative group">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-slate-500">Comissão Bruta</span>
+                    <span className="text-sm font-medium text-slate-500">Salário Bruto com DSR (20%)</span>
                     <button 
                       type="button"
                       onClick={() => setShowCalculationModal(true)}
@@ -1953,17 +1943,18 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 font-medium">Comissões + Extras</span>
+                  <span className="text-slate-500 font-medium">Comissões + Extras + DSR</span>
                   <button 
                     type="button"
                     onClick={() => setShowCalculationModal(true)}
                     className="text-sky-600 hover:text-sky-700 font-semibold inline-flex items-center gap-1 cursor-pointer"
                   >
-                    Memória de cálculo
+                    Ver Detalhamento
                   </button>
                 </div>
               </div>
 
+              {/* Card 3: Líquido Previsto a Receber */}
               <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950 text-white shadow-md shadow-slate-900/10 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
                 <div className="flex items-center justify-between z-10">
                   <span className="text-xs font-semibold uppercase tracking-wider text-sky-300">
@@ -2035,6 +2026,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
             </div>
           </section>
 
+          {}
           <section className="w-full px-6 sm:px-8 mt-6 print:px-0 print:mt-0 print:space-y-0 print-avoid-break">
             <div className="flex items-center justify-between mb-3 print:hidden">
               <div>
@@ -2046,8 +2038,18 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                 </p>
               </div>
               
-              <div className="text-xs text-slate-500 font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200/80 shadow-sm">
-                Total de registros: <span className="font-bold text-slate-800">{activeSales.length}</span>
+              <div className="flex items-center gap-3">
+                <div className="text-xs text-slate-500 font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200/80 shadow-sm">
+                  Total de registros: <span className="font-bold text-slate-800">{activeSales.length}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSalesCollapsed(prev => !prev)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200/80 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  {isSalesCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                  <span>{isSalesCollapsed ? 'Mostrar Lançamentos' : 'Recolher Lançamentos'}</span>
+                </button>
               </div>
             </div>
 
@@ -2062,7 +2064,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                       <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">VN (R$)</span>
-                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
+                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[8px]">
                             Tot: {formatBRL(metrics.vnBase)}
                           </span>
                         </div>
@@ -2071,7 +2073,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                       <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Margem (R$)</span>
-                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
+                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[8px]">
                             Tot: {formatBRL(metrics.marginBase)}
                           </span>
                         </div>
@@ -2080,7 +2082,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                       <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">F&I (R$)</span>
-                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
+                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[8px]">
                             Tot: {formatBRL(metrics.fAndIBase)}
                           </span>
                         </div>
@@ -2091,7 +2093,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                       <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Valor SPF</span>
-                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
+                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[8px]">
                             Penetr: {formatPercent(metrics.spfPenetration)}
                           </span>
                         </div>
@@ -2100,7 +2102,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                       <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Acessórios</span>
-                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
+                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[8px]">
                             T.M: {formatBRL(metrics.accTicketHeader)}
                           </span>
                         </div>
@@ -2109,7 +2111,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                       <th className="px-3 py-2.5 text-right print:px-1.5 print:py-0.5">
                         <div className="flex flex-col items-end">
                           <span className="font-semibold text-slate-700 print:text-slate-900 print:text-[8px]">Autobox</span>
-                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-slate-100 text-slate-700 border border-slate-200/80 print:bg-transparent print:border-none print:p-0 print:text-[8px]">
+                          <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs print:bg-transparent print:border-none print:p-0 print:text-[8px]">
                             Tot: {formatBRL(metrics.autoboxBase)}
                           </span>
                         </div>
@@ -2123,7 +2125,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-slate-100 print:divide-slate-200">
+                  <tbody className={`divide-y divide-slate-100 print:divide-slate-200 ${isSalesCollapsed ? 'hidden print:table-row-group' : ''}`}>
                     {activeSales.length === 0 ? (
                       <tr>
                         <td colSpan="14" className="text-center py-16 print:py-6 px-4">
@@ -2285,7 +2287,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
                 </table>
               </div>
 
-              <div className="p-4 bg-slate-50/60 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden">
+              <div className={`p-4 bg-slate-50/60 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden ${isSalesCollapsed ? 'hidden' : ''}`}>
                 <button 
                   type="button"
                   onClick={() => setIsAddModalOpen(true)} 
