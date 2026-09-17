@@ -4329,12 +4329,69 @@ export default function App() {
             box-shadow: none !important;
           }
 
-          /* 3. Textos auxiliares e legendas */
-          [class*="text-slate-400"], [class*="text-slate-500"], [class*="text-slate-300"] {
+          /* 3. Forçar títulos de seção, legendas e textos claros a ficarem legíveis no fundo branco */
+          h1, h2, h3, h4, p, span, label,
+          .text-white,
+          [class*="text-slate-50"],
+          [class*="text-slate-100"],
+          [class*="text-slate-200"],
+          [class*="text-slate-300"] {
+            color: #0f172a !important;
+          }
+
+          /* 4. Textos secundários e legendas de apoio */
+          [class*="text-slate-400"],
+          [class*="text-slate-500"] {
             color: #475569 !important;
           }
 
-          /* 4. Inputs, selects e células de tabela */
+          /* 5. Números grandes em destaque */
+          .text-3xl, .text-2xl, .text-xl, .font-bold, .font-extrabold {
+            color: #0f172a !important;
+          }
+
+          /* 6. Manter as cores de acento financeiro com contraste para papel */
+          [class*="text-sky-"], [class*="text-blue-"] {
+            color: #0284c7 !important;
+          }
+          [class*="text-emerald-"], [class*="text-green-"] {
+            color: #059669 !important;
+          }
+          [class*="text-amber-"], [class*="text-yellow-"] {
+            color: #d97706 !important;
+          }
+
+          /* 7. Blindagem dos elementos gráficos do SVG Donut e barras */
+          svg, path, circle, polygon, rect, [role="progressbar"] {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          svg path, svg circle {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          svg path[stroke], svg circle[stroke] {
+            stroke-opacity: 1 !important;
+          }
+          svg path[fill]:not([fill="#ffffff"]):not([fill="none"]),
+          svg circle[fill]:not([fill="#ffffff"]):not([fill="none"]) {
+            fill-opacity: 1 !important;
+          }
+
+          /* 8. Manter as bolinhas e pílulas de porcentagem da legenda visíveis */
+          span[class*="bg-"],
+          [class*="bg-sky-500"], [class*="bg-emerald-500"], [class*="bg-amber-500"] {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* 9. Mini cards de premiações do mês */
+          .grid-cols-4 > div, [class*="p-4"] {
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+          }
+
+          /* 10. Inputs, selects e células de tabela */
           input, select, td, th {
             background-color: #ffffff !important;
             background: transparent !important;
@@ -4342,42 +4399,19 @@ export default function App() {
             border-color: #e2e8f0 !important;
           }
 
-          /* 5. Cabeçalhos de tabela com fundo suave e texto em destaque */
+          /* 11. Cabeçalhos de tabela com fundo suave e texto em destaque */
           th {
             background-color: #f8fafc !important;
             color: #0f172a !important;
             font-weight: 700 !important;
           }
 
-          /* 6. Linhas da tabela de lançamentos com borda suave */
+          /* 12. Linhas da tabela de lançamentos com borda suave */
           tbody tr {
             border-bottom: 1px solid #e2e8f0 !important;
           }
 
-          /* 7. Preservação das cores de gráficos e barras */
-          svg, path, circle, polygon, rect, [role="progressbar"] {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* 8. Contraste dos destaques financeiros sobre fundo branco */
-          [class*="text-emerald-"], [class*="text-green-"] {
-            color: #059669 !important;
-          }
-          [class*="text-sky-"], [class*="text-blue-"] {
-            color: #0284c7 !important;
-          }
-          [class*="text-amber-"], [class*="text-yellow-"] {
-            color: #d97706 !important;
-          }
-
-          /* 9. Preservação de preenchimento em badges e pílulas */
-          [class*="bg-sky-500"], [class*="bg-emerald-500"], [class*="bg-amber-500"] {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* 10. Paginação e quebras de página */
+          /* 13. Paginação e quebras de página */
           .print-avoid-break {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
