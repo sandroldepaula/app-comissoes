@@ -1050,6 +1050,7 @@ export default function App() {
   const [activeDonutSlice, setActiveDonutSlice] = useState(null);
   const [activeModelBar, setActiveModelBar] = useState(null);
   const [newSale, setNewSale] = useState(DEFAULT_SALE);
+  const [draggedMonthIndex, setDraggedMonthIndex] = useState(null);
 
   const formatBRL = useCallback((val) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
@@ -1385,6 +1386,23 @@ export default function App() {
             netPercentage: m.aliquota_liquida !== undefined ? Number(m.aliquota_liquida) : 69.0,
             extras: m.lancamentos_extras || DEFAULT_EXTRAS
           }));
+
+          try {
+            const savedOrderRaw = localStorage.getItem(`auto_app_meses_order_${user.id}`);
+            if (savedOrderRaw) {
+              const savedOrder = JSON.parse(savedOrderRaw);
+              if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+                normalizedMonths.sort((a, b) => {
+                  const idxA = savedOrder.indexOf(a.id);
+                  const idxB = savedOrder.indexOf(b.id);
+                  if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                  if (idxA !== -1) return -1;
+                  if (idxB !== -1) return 1;
+                  return 0;
+                });
+              }
+            }
+          } catch (e) {}
 
           setMonths(normalizedMonths);
 
@@ -2191,16 +2209,48 @@ export default function App() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {months.map(m => {
+            {months.map((m, index) => {
               const mSales = salesByMonth[m.id] || [];
               const mMetrics = computeMonthMetrics(mSales, m.extras || DEFAULT_EXTRAS, m.netPercentage ?? 69.0);
               const metaProgress = m.meta > 0 ? Math.min(100, (mMetrics.volume / m.meta) * 100) : 0;
+              const isDragging = draggedMonthIndex === index;
 
               return (
                 <div 
                   key={m.id}
-                  className={`rounded-3xl p-6 shadow-2xl transition-all duration-200 flex flex-col justify-between group relative overflow-hidden ${
-                    isDark
+                  draggable
+                  onDragStart={(e) => {
+                    setDraggedMonthIndex(index);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                  }}
+                  onDragEnd={() => setDraggedMonthIndex(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedMonthIndex === null || draggedMonthIndex === index) return;
+                    const updated = [...months];
+                    const [movedItem] = updated.splice(draggedMonthIndex, 1);
+                    updated.splice(index, 0, movedItem);
+                    setMonths(updated);
+                    setDraggedMonthIndex(null);
+                    try {
+                      if (user?.id) {
+                        localStorage.setItem(`auto_app_meses_order_${user.id}`, JSON.stringify(updated.map(item => item.id)));
+                        localStorage.setItem(`auto_months_${user.id}`, JSON.stringify(updated));
+                      }
+                    } catch (err) {}
+                  }}
+                  onClick={() => {
+                    setSelectedMonthId(m.id);
+                    setCurrentScreen('DETAIL');
+                  }}
+                  className={`rounded-3xl p-6 shadow-2xl transition-all duration-200 flex flex-col justify-between group relative overflow-hidden cursor-pointer select-none ${
+                    isDragging
+                      ? 'opacity-40 scale-[0.98] border-dashed border-sky-500 shadow-sky-500/20 ring-2 ring-sky-500/30'
+                      : isDark
                       ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/90 border-t border-t-white/10 shadow-black/50 hover:border-slate-700/90 hover:shadow-sky-500/5'
                       : 'bg-white border border-slate-200/90 shadow-slate-200 hover:shadow-lg hover:border-slate-300'
                   }`}
@@ -2224,7 +2274,8 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      {/* Action buttons with stopPropagation */}
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -2314,7 +2365,8 @@ export default function App() {
                   <div className={`pt-5 mt-4 border-t ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setSelectedMonthId(m.id);
                         setCurrentScreen('DETAIL');
                       }}
