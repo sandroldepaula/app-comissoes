@@ -2821,7 +2821,16 @@ export default function App() {
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-3 print:grid-cols-12 print:gap-3 print:mt-1">
                     <div className="lg:col-span-5 flex items-center justify-center print:col-span-5">
                       <div className="relative w-[260px] h-[260px] print:w-[170px] print:h-[170px] flex items-center justify-center shrink-0">
-                        <svg width="260" height="260" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
+                        <svg 
+                          width="260" 
+                          height="260" 
+                          viewBox="0 0 260 260" 
+                          className="w-full h-full transform -rotate-90"
+                          style={{
+                            WebkitPrintColorAdjust: 'exact',
+                            printColorAdjust: 'exact'
+                          }}
+                        >
                           {donutGeometry.map((slice) => {
                             const isHovered = activeDonutSlice === slice.index;
                             return (
@@ -2834,7 +2843,9 @@ export default function App() {
                                   transformOrigin: '130px 130px',
                                   transform: isHovered ? 'scale(1.04)' : 'scale(1)',
                                   filter: isHovered ? 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.4))' : 'none',
-                                  opacity: activeDonutSlice !== null && !isHovered ? 0.35 : 1
+                                  opacity: activeDonutSlice !== null && !isHovered ? 0.35 : 1,
+                                  WebkitPrintColorAdjust: 'exact',
+                                  printColorAdjust: 'exact'
                                 }}
                                 onMouseEnter={() => setActiveDonutSlice(slice.index)}
                                 onMouseLeave={() => setActiveDonutSlice(null)}
@@ -4362,20 +4373,19 @@ export default function App() {
           }
 
           /* 7. Blindagem dos elementos gráficos do SVG Donut e barras */
-          svg, path, circle, polygon, rect, [role="progressbar"] {
+          svg, svg *, svg path, svg circle, polygon, rect, [role="progressbar"] {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            color-adjust: exact !important;
           }
-          svg path, svg circle {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          svg path[stroke], svg circle[stroke] {
+          svg circle[stroke], svg path[stroke] {
             stroke-opacity: 1 !important;
+            visibility: visible !important;
+            display: inline !important;
           }
-          svg path[fill]:not([fill="#ffffff"]):not([fill="none"]),
-          svg circle[fill]:not([fill="#ffffff"]):not([fill="none"]) {
+          svg path[fill]:not([fill="none"]), svg circle[fill]:not([fill="none"]) {
             fill-opacity: 1 !important;
+            visibility: visible !important;
           }
 
           /* 8. Manter as bolinhas e pílulas de porcentagem da legenda visíveis */
