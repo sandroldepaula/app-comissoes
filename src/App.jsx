@@ -2398,8 +2398,8 @@ export default function App() {
       <div className="w-full max-w-7xl mx-auto space-y-6 print:space-y-0 animate-in fade-in duration-200">
         
         {/* Navigation Bar for Selected Month */}
-        <div className="w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 print:hidden">
-          <div className={`rounded-2xl p-4 sm:px-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+        <div className="w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 print:px-0 print:pt-0 print:mb-2">
+          <div className={`rounded-2xl p-4 sm:px-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors print:p-2.5 print:rounded-xl print:border print:border-slate-300 print:shadow-none print:bg-white print:text-slate-900 ${
             isDark
               ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 shadow-black/40 text-slate-100'
               : 'bg-white border border-slate-200/80 shadow-slate-200 text-slate-800'
@@ -2408,7 +2408,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setCurrentScreen('HUB')}
-                className={`inline-flex items-center gap-1.5 font-semibold text-xs px-3.5 py-2 rounded-xl border transition-all cursor-pointer shrink-0 ${
+                className={`inline-flex items-center gap-1.5 font-semibold text-xs px-3.5 py-2 rounded-xl border transition-all cursor-pointer shrink-0 print:hidden ${
                   isDark
                     ? 'text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border-slate-700/60'
                     : 'text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border-slate-200'
@@ -2418,17 +2418,24 @@ export default function App() {
                 <span>Voltar para Meses</span>
               </button>
 
+              {/* Print Executive Competency Bar */}
+              <div className="hidden print:flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Competência Ativa:</span>
+                <span className="text-xs font-black text-slate-900">{activeMonth.mes} / {activeMonth.ano}</span>
+                <span className="text-[9px] text-slate-400 font-medium ml-2">• Emissão: {new Date().toLocaleDateString('pt-BR')}</span>
+              </div>
+
               {/* Mobile Meta Badge */}
-              <div className={`sm:hidden flex items-center gap-1.5 text-xs rounded-xl px-3 py-1.5 font-medium shrink-0 border ${
+              <div className={`sm:hidden flex items-center gap-1.5 text-xs rounded-xl px-3 py-1.5 font-medium shrink-0 border print:hidden ${
                 isDark ? 'text-slate-300 bg-slate-950/80 border-slate-800' : 'text-slate-700 bg-slate-50 border-slate-200'
               }`}>
                 <Target size={13} className="text-sky-500" />
                 <span>Meta: <strong className={isDark ? 'text-white font-bold' : 'text-slate-900 font-bold'}>{activeMonth.meta}</strong></span>
               </div>
 
-              <div className={`h-5 w-px hidden sm:block ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+              <div className={`h-5 w-px hidden sm:block print:hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
               
-              <div className="hidden sm:block">
+              <div className="hidden sm:block print:hidden">
                 <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">Competência Ativa</span>
                 <h2 className={`text-base font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                   {activeMonth.mes} / {activeMonth.ano}
@@ -2437,175 +2444,53 @@ export default function App() {
             </div>
 
             {/* Mobile Competency Title */}
-            <div className={`sm:hidden pt-1 border-t ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
+            <div className={`sm:hidden pt-1 border-t print:hidden ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
               <span className="text-[10px] text-slate-500 block font-semibold uppercase tracking-wider">Competência Ativa</span>
               <h2 className={`text-lg font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                 {activeMonth.mes} / {activeMonth.ano}
               </h2>
             </div>
 
-            {/* Desktop Meta Badge */}
-            <div className={`hidden sm:flex items-center gap-2 text-xs rounded-xl px-3.5 py-2 font-medium shrink-0 shadow-inner border ${
-              isDark ? 'text-slate-300 bg-slate-950/80 border-slate-800' : 'text-slate-700 bg-slate-50 border-slate-200'
-            }`}>
-              <Target size={14} className="text-sky-500" />
-              <span>Meta: <strong className={isDark ? 'text-white font-bold' : 'text-slate-900 font-bold'}>{activeMonth.meta}</strong> veículos</span>
+            {/* Meta & Aliquot Badges */}
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-2 text-xs rounded-xl px-3.5 py-2 font-medium shrink-0 shadow-inner border print:p-1 print:px-2.5 print:rounded-lg print:border-slate-300 print:bg-slate-100 print:shadow-none ${
+                isDark ? 'text-slate-300 bg-slate-950/80 border-slate-800' : 'text-slate-700 bg-slate-50 border-slate-200'
+              }`}>
+                <Target size={14} className="text-sky-500 print:hidden" />
+                <span>Meta: <strong className={isDark ? 'text-white font-bold' : 'text-slate-900 font-bold'}>{activeMonth.meta}</strong> veículos</span>
+              </div>
+              <div className="hidden print:inline-flex items-center px-2 py-1 rounded-lg bg-slate-900 text-white font-mono text-[9px] font-bold">
+                Líq: {activeNetPercentage.toFixed(2)}%
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Print Executive Header (strictly for @media print) */}
-        <div className="hidden print:flex items-center justify-between border-b border-slate-300 pb-2 mb-2.5 text-slate-900">
-          <div className="flex items-baseline gap-2.5">
-            <h1 className="text-sm font-black tracking-tight text-slate-900 leading-none">
-              Relatório Executivo de Vendas & Comissões
-            </h1>
-            <span className="text-[10px] text-slate-600 font-semibold">
-              Competência: <strong>{activeMonth.mes} / {activeMonth.ano}</strong>
-            </span>
-            <span className="text-[9px] text-slate-400">
-              • Emissão: {new Date().toLocaleDateString('pt-BR')}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 text-[9.5px]">
-            <span className="text-slate-600 font-medium">Meta: <strong>{activeMonth.meta}</strong> veículos</span>
-            <span className="text-slate-300">|</span>
-            <span className="text-slate-600">Alíquota Líquida:</span>
-            <span className="text-slate-900 font-black bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-              {activeNetPercentage.toFixed(2)}%
-            </span>
-          </div>
-        </div>
-
-        {/* Print Top Metric Cards (strictly for @media print) */}
-        <div className="hidden print:grid print:grid-cols-4 print:gap-3 print:mb-2.5 print-avoid-break">
-          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider">
-                Volume Total & Faixa VN
-              </span>
-              <span className="w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-slate-400">
-                <Layers size={12} />
-              </span>
-            </div>
-            <div className="my-1">
-              <span className="text-xl font-black text-slate-900 tracking-tight">
-                {metrics.volume} {metrics.volume === 1 ? 'veículo' : 'veículos'}
-              </span>
-            </div>
-            <div className="border-t border-slate-100 pt-1 text-[9px] text-slate-500 flex items-center justify-between">
-              <span>Taxa Aplicada VN:</span>
-              <span className="bg-rose-50 text-rose-700 font-bold px-1.5 py-0.2 rounded-full border border-rose-200">
-                {formatPercent(metrics.vnTier)}
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider">
-                DSR (20%)
-              </span>
-              <span className="w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-slate-400">
-                <ShieldCheck size={12} />
-              </span>
-            </div>
-            <div className="my-1">
-              <span className="text-xl font-black text-slate-900 tracking-tight">
-                {formatBRL(metrics.dsr)}
-              </span>
-            </div>
-            <div className="border-t border-slate-100 pt-1 text-[9px] text-slate-500 flex items-center justify-between">
-              <span>Base de Cálculo</span>
-              <span className="font-semibold text-slate-700">VN + Margem + Retorno</span>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider">
-                Comissão Bruta
-              </span>
-              <span className="w-5 h-5 rounded bg-sky-50 flex items-center justify-center text-sky-600">
-                <Calculator size={12} />
-              </span>
-            </div>
-            <div className="my-1">
-              <span className="text-xl font-black text-slate-900 tracking-tight">
-                {formatBRL(metrics.grossCommission)}
-              </span>
-            </div>
-            <div className="border-t border-slate-100 pt-1 text-[9px] text-slate-500 flex items-center justify-between">
-              <span>Origem</span>
-              <span className="font-semibold text-slate-700">Comissões + Extras</span>
-            </div>
-          </div>
-
-          <div 
-            className="bg-slate-900 text-white rounded-xl p-3 border border-slate-800 flex flex-col justify-between print-dark-card"
-            style={{ backgroundColor: '#0f172a', color: '#ffffff', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[9.5px] font-semibold uppercase tracking-wider text-sky-300">
-                Líquido Previsto
-              </span>
-              <span className="text-[9px] font-bold text-sky-200 bg-white/10 px-1.5 py-0.2 rounded border border-white/10">
-                {activeNetPercentage.toFixed(2)}%
-              </span>
-            </div>
-            <div className="my-1">
-              <span className="text-xl font-black text-sky-400 tracking-tight">
-                {formatBRL(metrics.netCommission)}
-              </span>
-            </div>
-            <div className="border-t border-white/10 pt-1 text-[9px] text-slate-300 flex items-center justify-between">
-              <span>Alíquota Base:</span>
-              <span className="font-semibold text-white">{activeNetPercentage.toFixed(2)}%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Print Extras Inline Strip */}
-        <div className="hidden print:flex items-center justify-between border border-slate-300 rounded-xl bg-slate-50/90 p-2 px-3 mb-2.5 text-[9.5px] text-slate-800 print-avoid-break">
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-slate-900 uppercase tracking-wider text-[8px] bg-slate-200/90 px-1.5 py-0.5 rounded">
-              Premiações do mês:
-            </span>
-            <span>Usados: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioUsados)}</strong></span>
-            <span>Águia: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioAguia)}</strong></span>
-            <span>Líder: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioLider)}</strong></span>
-            <span>NPS: <strong className="font-bold text-slate-900">{formatBRL(activeExtras.premioNps)}</strong></span>
-          </div>
-          <div className="font-medium text-slate-700">
-            Total Extras: <span className="font-bold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-300">{formatBRL(metrics.extrasTotal)}</span>
           </div>
         </div>
 
         {/* 1. SEÇÃO: VISÃO GERAL DO MÊS (3 CARDS PRINCIPAIS) */}
-        <section className="w-full print:hidden">
-          <div className="w-full px-4 sm:px-8 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <h2 className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+        <section className="w-full print:block print:mb-2 print-avoid-break">
+          <div className="w-full px-4 sm:px-8 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 print:px-0 print:pt-0">
+            <h2 className={`text-xl sm:text-2xl font-bold tracking-tight print:text-xs print:font-black ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               Visão Geral do Mês
             </h2>
-            <div className={`flex items-center gap-1.5 text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <div className={`flex items-center gap-1.5 text-xs font-medium print:hidden ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               <Sparkles size={14} className="text-sky-500" />
               <span>Cálculos atualizados dinamicamente</span>
             </div>
           </div>
 
-          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-4 sm:px-8 mt-4">
+          <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-4 sm:px-8 mt-4 print:px-0 print:mt-1.5 print:gap-2.5 print:grid-cols-3">
             
             {/* Card 1: Volume Total & Gatilho da Comissão */}
-            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 relative overflow-hidden group shadow-2xl ${
+            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 relative overflow-hidden group shadow-2xl print:p-2.5 print:rounded-xl print:border print:border-slate-300 print:bg-white print:text-slate-900 print:shadow-none ${
               isDark
                 ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 shadow-black/40 hover:border-slate-700'
                 : 'bg-white border border-slate-200/90 shadow-slate-200 hover:border-slate-300'
             }`}>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-[8px] print:font-bold">
                   Volume Total & Gatilho da Comissão
                 </span>
-                <span className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-colors shadow-inner ${
+                <span className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-colors shadow-inner print:hidden ${
                   isDark
                     ? 'bg-slate-950 border-slate-800 text-slate-400 group-hover:text-sky-400'
                     : 'bg-slate-50 border-slate-200 text-slate-500 group-hover:text-sky-600'
@@ -2613,39 +2498,39 @@ export default function App() {
                   <Layers size={16} />
                 </span>
               </div>
-              <div className="mt-4 flex items-baseline gap-2.5">
-                <span className={`text-3xl font-black tracking-tight tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+              <div className="mt-4 print:mt-1 flex items-baseline gap-2.5">
+                <span className={`text-3xl print:text-xl font-black tracking-tight tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                   {metrics.volume}
                 </span>
-                <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <span className={`text-xs print:text-[8.5px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   {metrics.volume === 1 ? 'veículo faturado' : 'veículos faturados'}
                 </span>
               </div>
-              <div className={`mt-4 pt-3 border-t flex items-center justify-between text-xs ${
+              <div className={`mt-4 print:mt-1 pt-3 print:pt-1 border-t flex items-center justify-between text-xs print:text-[8px] ${
                 isDark ? 'border-slate-800/80' : 'border-slate-100'
               }`}>
                 <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Taxa Aplicada VN:</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-500 border border-rose-500/30 tabular-nums">
+                <span className="inline-flex items-center px-2.5 py-0.5 print:px-1.5 print:py-0 rounded-full text-xs print:text-[7.5px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/30 tabular-nums">
                   {formatPercent(metrics.vnTier)}
                 </span>
               </div>
             </div>
 
             {/* Card 2: Salário Bruto com DSR (20%) */}
-            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 relative group shadow-2xl ${
+            <div className={`rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 relative group shadow-2xl print:p-2.5 print:rounded-xl print:border print:border-slate-300 print:bg-white print:text-slate-900 print:shadow-none ${
               isDark
                 ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 shadow-black/40 hover:border-slate-700'
                 : 'bg-white border border-slate-200/90 shadow-slate-200 hover:border-slate-300'
             }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider print:text-[8px] print:font-bold">
                     Salário Bruto com DSR (20%)
                   </span>
                   <button 
                     type="button"
                     onClick={() => setShowCalculationModal(true)}
-                    className="text-slate-400 hover:text-sky-500 transition-colors p-0.5 rounded-md cursor-pointer"
+                    className="text-slate-400 hover:text-sky-500 transition-colors p-0.5 rounded-md cursor-pointer print:hidden"
                     title="Ver memória de cálculo"
                   >
                     <Info size={15} />
@@ -2654,17 +2539,17 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowCalculationModal(true)}
-                  className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-500 flex items-center justify-center hover:bg-sky-500/20 transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-500 flex items-center justify-center hover:bg-sky-500/20 transition-colors cursor-pointer print:hidden"
                   title="Abrir detalhamento"
                 >
                   <ArrowUpRight size={16} />
                 </button>
               </div>
 
-              <div className="mt-4">
+              <div className="mt-4 print:mt-1">
                 <span 
                   onClick={() => setShowCalculationModal(true)}
-                  className={`text-3xl font-black tracking-tight tabular-nums cursor-pointer hover:text-sky-500 transition-colors ${
+                  className={`text-3xl print:text-xl font-black tracking-tight tabular-nums cursor-pointer hover:text-sky-500 transition-colors ${
                     isDark ? 'text-slate-100' : 'text-slate-900'
                   }`}
                 >
@@ -2672,14 +2557,14 @@ export default function App() {
                 </span>
               </div>
 
-              <div className={`mt-4 pt-3 border-t flex items-center justify-between text-xs ${
+              <div className={`mt-4 print:mt-1 pt-3 print:pt-1 border-t flex items-center justify-between text-xs print:text-[8px] ${
                 isDark ? 'border-slate-800/80' : 'border-slate-100'
               }`}>
                 <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Comissões + Extras + DSR</span>
                 <button 
                   type="button"
                   onClick={() => setShowCalculationModal(true)}
-                  className="text-sky-500 hover:text-sky-400 font-bold inline-flex items-center gap-1 cursor-pointer"
+                  className="text-sky-500 hover:text-sky-400 font-bold inline-flex items-center gap-1 cursor-pointer print:hidden"
                 >
                   Ver Detalhamento
                 </button>
@@ -2687,13 +2572,13 @@ export default function App() {
             </div>
 
             {/* Card 3: Líquido Previsto a Receber */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950/70 border border-sky-500/30 border-t border-t-sky-400/30 text-white shadow-2xl shadow-sky-950/30 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950/70 border border-sky-500/30 border-t border-t-sky-400/30 text-white shadow-2xl shadow-sky-950/30 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden print:p-2.5 print:rounded-xl print:border print:border-slate-800 print:bg-slate-900 print:shadow-none">
               <div className="flex items-center justify-between z-10">
-                <span className="text-xs font-semibold uppercase tracking-wider text-sky-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-sky-400 print:text-[8px]">
                   Líquido Previsto a Receber
                 </span>
                 
-                <div className="flex items-center bg-slate-950/80 hover:bg-slate-950 backdrop-blur-md rounded-xl border border-slate-800 px-2 py-0.5">
+                <div className="flex items-center bg-slate-950/80 hover:bg-slate-950 backdrop-blur-md rounded-xl border border-slate-800 px-2 py-0.5 print:hidden">
                   <input
                     type="number"
                     step="0.01"
@@ -2705,36 +2590,39 @@ export default function App() {
                   />
                   <span className="text-sky-400 text-xs font-bold ml-0.5">%</span>
                 </div>
+                <span className="hidden print:inline-block text-[8px] font-bold text-sky-300 bg-white/10 px-1.5 py-0.2 rounded border border-white/10">
+                  {activeNetPercentage.toFixed(2)}%
+                </span>
               </div>
 
-              <div className="mt-4 z-10">
-                <span className="text-3xl font-black text-sky-400 tracking-tight tabular-nums">
+              <div className="mt-4 print:mt-1 z-10">
+                <span className="text-3xl print:text-xl font-black text-sky-400 tracking-tight tabular-nums">
                   {formatBRL(metrics.netCommission)}
                 </span>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs z-10">
+              <div className="mt-4 print:mt-1 pt-3 print:pt-1 border-t border-white/10 flex items-center justify-between text-xs print:text-[8px] z-10">
                 <span className="text-slate-400">Alíquota Líquida Base:</span>
                 <span className="font-bold text-white tabular-nums">{activeNetPercentage.toFixed(2)}%</span>
               </div>
 
-              <div className="absolute -right-6 -bottom-6 w-36 h-36 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -right-6 -bottom-6 w-36 h-36 bg-sky-500/10 rounded-full blur-2xl pointer-events-none print:hidden" />
             </div>
           </div>
         </section>
 
         {/* 2. SEÇÃO: PREMIAÇÕES DO MÊS (MINI-CARDS) */}
-        <section className="w-full px-4 sm:px-8 mt-6 print:hidden">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <section className="w-full px-4 sm:px-8 mt-6 print:block print:px-0 print:mt-2 print:mb-2 print-avoid-break">
+          <div className="flex items-center justify-between mb-3 print:mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 print:text-[8.5px] print:font-bold">
               Premiações do mês
             </span>
-            <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className={`text-xs font-medium print:text-[8.5px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Soma total: <strong className={`tabular-nums ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{formatBRL(metrics.extrasTotal)}</strong>
             </span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 print:grid-cols-4 print:gap-2">
             {[
               { label: 'Prêmio Usados', val: activeExtras.premioUsados, icon: Award },
               { label: 'Prêmio Águia', val: activeExtras.premioAguia, icon: TrendingUp },
@@ -2743,20 +2631,20 @@ export default function App() {
             ].map((p, idx) => {
               const IconComp = p.icon;
               return (
-                <div key={idx} className={`rounded-2xl p-3.5 flex items-center justify-between shadow-xl transition-colors ${
+                <div key={idx} className={`rounded-2xl p-3.5 flex items-center justify-between shadow-xl transition-colors print:p-2 print:rounded-xl print:border print:border-slate-300 print:bg-white print:text-slate-900 print:shadow-none ${
                   isDark
                     ? 'bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 text-slate-100'
                     : 'bg-white border border-slate-200/80 text-slate-800 shadow-slate-100'
                 }`}>
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-8 h-8 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner ${
+                  <div className="flex items-center gap-2.5 print:gap-1.5">
+                    <div className={`w-8 h-8 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner print:w-6 print:h-6 print:rounded-lg print:border-slate-300 print:bg-slate-100 ${
                       isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
                     }`}>
-                      <IconComp size={15} />
+                      <IconComp size={15} className="print:w-3.5 print:h-3.5" />
                     </div>
                     <div>
-                      <span className={`block text-[11px] font-medium leading-none ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{p.label}</span>
-                      <span className={`text-sm font-bold mt-1 block tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(p.val)}</span>
+                      <span className={`block text-[11px] font-medium leading-none print:text-[8px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{p.label}</span>
+                      <span className={`text-sm font-bold mt-1 block tabular-nums print:text-[9.5px] print:mt-0.5 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(p.val)}</span>
                     </div>
                   </div>
                 </div>
@@ -2765,66 +2653,66 @@ export default function App() {
           </div>
         </section>
 
-        {/* 3. SEÇÃO: INTELIGÊNCIA COMERCIAL & ANÁLISE BI ANALYTICS (POSICIONADA ANTES DE VENDAS) */}
-        <section className="w-full print:hidden">
-          <div className="w-full px-6 sm:px-8 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+        {/* 3. SEÇÃO: INTELIGÊNCIA COMERCIAL & ANÁLISE BI ANALYTICS */}
+        <section className="w-full print:block print:px-0 print:mt-2 print:mb-0 print-avoid-break">
+          <div className="w-full px-6 sm:px-8 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 print:px-0 print:pt-0">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                <h2 className={`text-2xl font-bold tracking-tight print:text-xs print:font-black ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                   Inteligência Comercial & Análise BI
                 </h2>
-                <span className="bg-sky-500/10 text-sky-500 text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full border border-sky-500/20">
+                <span className="bg-sky-500/10 text-sky-500 text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full border border-sky-500/20 print:text-[7.5px] print:px-1.5 print:py-0">
                   Analytics
                 </span>
               </div>
-              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className={`text-xs mt-0.5 print:hidden ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Distribuição de mix de faturamento e decomposição transparente das receitas apuradas
               </p>
             </div>
-            <span className={`text-xs font-medium hidden sm:inline-block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className={`text-xs font-medium hidden sm:inline-block print:inline-block print:text-[8px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {activeSales.length} {activeSales.length === 1 ? 'venda analisada' : 'vendas analisadas'}
             </span>
           </div>
 
-          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 px-6 sm:px-8 mt-4 mb-8">
+          <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 px-6 sm:px-8 mt-4 mb-8 print:grid-cols-2 print:px-0 print:mt-1.5 print:mb-0 print:gap-3">
             
             {/* Chart 1: Volume por Modelo */}
-            <div className={`rounded-2xl p-6 shadow-2xl transition-all duration-200 relative flex flex-col justify-between overflow-hidden ${
+            <div className={`rounded-2xl p-6 shadow-2xl transition-all duration-200 relative flex flex-col justify-between overflow-hidden print:p-2.5 print:rounded-xl print:border print:border-slate-300 print:bg-white print:text-slate-900 print:shadow-none ${
               isDark
                 ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 hover:border-slate-700 text-slate-100'
                 : 'bg-white border border-slate-200/90 shadow-slate-200 hover:border-slate-300 text-slate-800'
             }`}>
-              <div className={`flex items-start justify-between gap-3 border-b pb-4 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <div className={`flex items-start justify-between gap-3 border-b pb-4 print:pb-1.5 print:border-slate-200 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner ${
+                    <div className={`w-8 h-8 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner print:w-6 print:h-6 print:rounded-lg print:border-slate-300 print:bg-slate-100 ${
                       isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
                     }`}>
-                      <BarChart3 size={16} />
+                      <BarChart3 size={16} className="print:w-3.5 print:h-3.5" />
                     </div>
-                    <h3 className={`text-base font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                    <h3 className={`text-base font-bold tracking-tight print:text-[9.5px] ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                       Volume por Modelo
                     </h3>
                   </div>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <p className={`text-xs mt-1 print:hidden ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     Ranking decrescente de unidades faturadas no período
                   </p>
                 </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-xl border ${
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-xl border print:text-[7.5px] print:px-1.5 print:py-0.2 print:rounded-lg ${
                   isDark ? 'bg-slate-950 text-slate-300 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200'
                 }`}>
                   {modelVolumeData.length} {modelVolumeData.length === 1 ? 'modelo' : 'modelos'}
                 </span>
               </div>
 
-              <div className="pt-5 pb-2 flex-1">
+              <div className="pt-5 pb-2 flex-1 print:pt-2 print:pb-1">
                 {modelVolumeData.length === 0 ? (
-                  <div className="h-56 flex flex-col items-center justify-center text-slate-500 text-xs">
-                    <Car size={28} className="mb-2 text-slate-600" />
+                  <div className="h-56 print:h-20 flex flex-col items-center justify-center text-slate-500 text-xs print:text-[8px]">
+                    <Car size={28} className="mb-2 text-slate-600 print:w-4 print:h-4" />
                     <span>Nenhum veículo lançado para análise gráfica.</span>
                   </div>
                 ) : (
-                  <div className="min-h-[400px] max-h-[540px] overflow-y-auto pr-2 space-y-3">
+                  <div className="min-h-[400px] max-h-[540px] overflow-y-auto pr-2 space-y-3 print:min-h-0 print:max-h-none print:overflow-visible print:space-y-1.5 print:pr-0">
                     {modelVolumeData.map((item, idx) => {
                       const isHovered = activeModelBar === item.model;
                       const maxCount = modelVolumeData[0]?.count || 1;
@@ -2835,15 +2723,15 @@ export default function App() {
                           key={item.model}
                           onMouseEnter={() => setActiveModelBar(item.model)}
                           onMouseLeave={() => setActiveModelBar(null)}
-                          className={`p-2.5 rounded-xl border transition-all duration-200 relative cursor-pointer ${
+                          className={`p-2.5 rounded-xl border transition-all duration-200 relative cursor-pointer print:p-1.5 print:rounded-lg print:border-slate-200 print:bg-slate-50/70 ${
                             isHovered 
                               ? isDark ? 'bg-slate-800/80 border-sky-500/40 shadow-lg' : 'bg-sky-50 border-sky-300 shadow-md'
                               : isDark ? 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700' : 'bg-slate-50 border-slate-200 hover:border-slate-300'
                           }`}
                         >
-                          <div className="flex items-center justify-between text-xs mb-1.5">
+                          <div className="flex items-center justify-between text-xs print:text-[8px] mb-1.5 print:mb-0.5">
                             <div className="flex items-center gap-2 min-w-0 pr-2">
-                              <span className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0 ${
+                              <span className={`w-5 h-5 rounded-md text-[10px] print:w-3.5 print:h-3.5 print:text-[6.5px] font-bold flex items-center justify-center shrink-0 ${
                                 idx === 0 
                                   ? 'bg-sky-500 text-slate-950 shadow-xs' 
                                   : idx === 1 
@@ -2852,42 +2740,33 @@ export default function App() {
                               }`}>
                                 #{idx + 1}
                               </span>
-                              <span className={`font-semibold truncate tracking-tight text-[13px] ${
-                                isDark ? 'text-slate-200' : 'text-slate-800'
+                              <span className={`font-semibold truncate tracking-tight text-[13px] print:text-[8px] ${
+                                isDark ? 'text-slate-200 print:text-slate-800' : 'text-slate-800'
                               }`}>
                                 {item.model}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0 font-mono tabular-nums">
-                              <span className={`font-bold text-xs ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                              <span className={`font-bold text-xs print:text-[8px] ${isDark ? 'text-slate-100 print:text-slate-900' : 'text-slate-900'}`}>
                                 {item.count} {item.count === 1 ? 'unid.' : 'unids.'}
                               </span>
-                              <span className="text-[11px] font-bold text-sky-500 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">
+                              <span className="text-[11px] print:text-[7px] font-bold text-sky-500 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20 print:px-1 print:py-0">
                                 {item.percentage.toFixed(1).replace('.', ',')}%
                               </span>
                             </div>
                           </div>
 
-                          <div className={`w-full rounded-full h-2 overflow-hidden border p-[1px] ${
-                            isDark ? 'bg-slate-900 border-slate-800/80' : 'bg-slate-200 border-slate-300'
+                          <div className={`w-full rounded-full h-2 print:h-1 overflow-hidden border p-[1px] ${
+                            isDark ? 'bg-slate-900 border-slate-800/80 print:bg-slate-200 print:border-slate-300' : 'bg-slate-200 border-slate-300'
                           }`}>
                             <div
                               style={{ width: `${barWidth}%` }}
-                              className={`h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400 transition-all duration-300 ${
+                              className={`h-full rounded-full bg-gradient-to-r from-sky-500 to-sky-400 transition-all duration-300 print:bg-sky-600 ${
                                 isHovered ? 'shadow-lg shadow-sky-500/40' : ''
                               }`}
                             />
                           </div>
-
-                          {isHovered && (
-                            <div className="absolute right-3 -top-10 z-20 pointer-events-none backdrop-blur-xl bg-slate-950 text-white p-2 px-3 rounded-xl border border-slate-700 shadow-2xl text-xs flex items-center gap-2 animate-in fade-in zoom-in-95 duration-150">
-                              <span className="w-2 h-2 rounded-full bg-sky-400" />
-                              <span className="font-medium text-slate-400">{item.model}:</span>
-                              <span className="font-bold text-white tabular-nums">{item.count} {item.count === 1 ? 'carro' : 'carros'}</span>
-                              <span className="text-sky-400 text-[11px] tabular-nums">({item.percentage.toFixed(1)}%)</span>
-                            </div>
-                          )}
                         </div>
                       );
                     })}
@@ -2895,53 +2774,53 @@ export default function App() {
                 )}
               </div>
 
-              <div className={`pt-3 border-t flex items-center justify-between text-[11px] ${
-                isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'
+              <div className={`pt-3 print:pt-1 border-t flex items-center justify-between text-[11px] print:text-[7.5px] ${
+                isDark ? 'border-slate-800 text-slate-400 print:border-slate-200 print:text-slate-600' : 'border-slate-200 text-slate-500'
               }`}>
                 <span>Concentração no líder ({modelVolumeData[0]?.model || 'N/D'}):</span>
-                <span className={`font-bold tabular-nums ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                <span className={`font-bold tabular-nums ${isDark ? 'text-slate-200 print:text-slate-900' : 'text-slate-800'}`}>
                   {modelVolumeData[0]?.percentage ? `${modelVolumeData[0].percentage.toFixed(1).replace('.', ',')}% das vendas` : '0%'}
                 </span>
               </div>
             </div>
 
             {/* Chart 2: Composição da Comissão Bruta */}
-            <div className={`rounded-2xl p-6 shadow-2xl transition-all duration-200 relative flex flex-col justify-between overflow-hidden ${
+            <div className={`rounded-2xl p-6 shadow-2xl transition-all duration-200 relative flex flex-col justify-between overflow-hidden print:p-2.5 print:rounded-xl print:border print:border-slate-300 print:bg-white print:text-slate-900 print:shadow-none ${
               isDark
                 ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 hover:border-slate-700 text-slate-100'
                 : 'bg-white border border-slate-200/90 shadow-slate-200 hover:border-slate-300 text-slate-800'
             }`}>
-              <div className={`flex items-start justify-between gap-3 border-b pb-4 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <div className={`flex items-start justify-between gap-3 border-b pb-4 print:pb-1.5 print:border-slate-200 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-xl border text-indigo-500 flex items-center justify-center shadow-inner ${
+                    <div className={`w-8 h-8 rounded-xl border text-indigo-500 flex items-center justify-center shadow-inner print:w-6 print:h-6 print:rounded-lg print:border-slate-300 print:bg-slate-100 ${
                       isDark ? 'bg-slate-950 border-slate-800' : 'bg-indigo-50 border-indigo-200'
                     }`}>
-                      <PieChart size={16} />
+                      <PieChart size={16} className="print:w-3.5 print:h-3.5" />
                     </div>
-                    <h3 className={`text-base font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                    <h3 className={`text-base font-bold tracking-tight print:text-[9.5px] ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                       Composição da Comissão Bruta
                     </h3>
                   </div>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <p className={`text-xs mt-1 print:hidden ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     Fatiamento proporcional da receita por origem de bonificação
                   </p>
                 </div>
-                <span className="text-xs font-bold bg-indigo-500/10 text-indigo-500 px-2.5 py-1 rounded-xl border border-indigo-500/20">
+                <span className="text-xs font-bold bg-indigo-500/10 text-indigo-500 px-2.5 py-1 rounded-xl border border-indigo-500/20 print:text-[7.5px] print:px-1.5 print:py-0.2 print:rounded-lg">
                   {grossCommissionSlices.length} {grossCommissionSlices.length === 1 ? 'fonte ativa' : 'fontes ativas'}
                 </span>
               </div>
 
-              <div className="pt-4 pb-2 flex-1">
+              <div className="pt-4 pb-2 flex-1 print:pt-1 print:pb-1">
                 {grossCommissionSlices.length === 0 ? (
-                  <div className="h-56 flex flex-col items-center justify-center text-slate-500 text-xs w-full">
-                    <Calculator size={28} className="mb-2 text-slate-600" />
+                  <div className="h-56 print:h-20 flex flex-col items-center justify-center text-slate-500 text-xs print:text-[8px] w-full">
+                    <Calculator size={28} className="mb-2 text-slate-600 print:w-4 print:h-4" />
                     <span>Nenhuma comissão apurada para compor o gráfico.</span>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-3">
-                    <div className="lg:col-span-5 flex items-center justify-center">
-                      <div className="relative w-[260px] h-[260px] flex items-center justify-center shrink-0">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-3 print:grid-cols-12 print:gap-3 print:mt-1">
+                    <div className="lg:col-span-5 flex items-center justify-center print:col-span-5">
+                      <div className="relative w-[260px] h-[260px] print:w-[170px] print:h-[170px] flex items-center justify-center shrink-0">
                         <svg width="260" height="260" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
                           {donutGeometry.map((slice) => {
                             const isHovered = activeDonutSlice === slice.index;
@@ -2965,36 +2844,16 @@ export default function App() {
                         </svg>
 
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">TOTAL BRUTO</span>
-                          <span className={`text-lg font-black tracking-tight tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                          <span className="text-[10px] print:text-[7.5px] uppercase font-bold text-slate-400 tracking-wider">TOTAL BRUTO</span>
+                          <span className={`text-lg print:text-xs font-black tracking-tight tabular-nums ${isDark ? 'text-slate-100 print:text-slate-900' : 'text-slate-900'}`}>
                             {formatBRL(metrics.grossCommission)}
                           </span>
-                          <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 mt-1">100% Ativo</span>
+                          <span className="text-[10px] print:text-[7px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 mt-1 print:mt-0.5 print:px-1 print:py-0">100% Ativo</span>
                         </div>
-
-                        {activeDonutSlice !== null && donutGeometry[activeDonutSlice] && (
-                          <div className="absolute -bottom-3 z-30 pointer-events-none backdrop-blur-xl bg-slate-950/95 text-white py-1.5 px-3 rounded-xl border border-slate-700 shadow-2xl text-[11px] whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
-                            <div className="flex items-center gap-1.5 font-mono tabular-nums">
-                              <span 
-                                className="w-2 h-2 rounded-full shrink-0" 
-                                style={{ backgroundColor: donutGeometry[activeDonutSlice].color }} 
-                              />
-                              <span className="font-semibold text-slate-300 font-sans">
-                                {donutGeometry[activeDonutSlice].label}:
-                              </span>
-                              <span className="font-bold text-white">
-                                {formatBRL(donutGeometry[activeDonutSlice].value)}
-                              </span>
-                              <span className="text-sky-400 font-semibold">
-                                ({donutGeometry[activeDonutSlice].percent.toFixed(1).replace('.', ',')}%)
-                              </span>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
 
-                    <div className="lg:col-span-7 flex flex-col justify-center space-y-1.5 min-w-0">
+                    <div className="lg:col-span-7 flex flex-col justify-center space-y-1.5 print:col-span-7 print:space-y-0.5 min-w-0">
                       {grossCommissionSlices.filter(s => s.value > 0).map((slice, index) => {
                         const isHovered = activeDonutSlice === index;
                         return (
@@ -3002,23 +2861,23 @@ export default function App() {
                             key={slice.id}
                             onMouseEnter={() => setActiveDonutSlice(index)}
                             onMouseLeave={() => setActiveDonutSlice(null)}
-                            className={`flex items-center justify-between gap-3 py-1.5 px-3 rounded-xl border transition-all cursor-pointer ${
+                            className={`flex items-center justify-between gap-3 py-1.5 px-3 rounded-xl border transition-all cursor-pointer print:py-0.5 print:px-1.5 print:rounded-lg print:border-slate-100 print:bg-slate-50/50 ${
                               isHovered 
                                 ? isDark ? 'bg-slate-800 border-slate-700 shadow-md' : 'bg-slate-100 border-slate-300 shadow-sm'
                                 : isDark ? 'bg-slate-950/50 border-slate-800/80 hover:bg-slate-850 hover:border-slate-700' : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100 hover:border-slate-300'
                             }`}
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
-                              <span className={`text-xs font-semibold whitespace-nowrap ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                            <div className="flex items-center gap-2.5 print:gap-1.5 min-w-0">
+                              <span className="w-2.5 h-2.5 print:w-1.5 print:h-1.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
+                              <span className={`text-xs print:text-[8px] font-semibold whitespace-nowrap ${isDark ? 'text-slate-300 print:text-slate-700' : 'text-slate-700'}`}>
                                 {slice.shortLabel || slice.label}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0 font-mono tabular-nums">
-                              <span className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                            <div className="flex items-center gap-3 print:gap-1.5 shrink-0 font-mono tabular-nums">
+                              <span className={`text-xs print:text-[8px] font-bold ${isDark ? 'text-slate-100 print:text-slate-900' : 'text-slate-900'}`}>
                                 {formatBRL(slice.value)}
                               </span>
-                              <span className="text-[11px] font-semibold text-slate-500 w-12 text-right">
+                              <span className="text-[11px] print:text-[7.5px] font-semibold text-slate-500 w-12 print:w-8 text-right">
                                 {slice.percent.toFixed(1).replace('.', ',')}%
                               </span>
                             </div>
@@ -3030,11 +2889,11 @@ export default function App() {
                 )}
               </div>
 
-              <div className={`pt-3 border-t flex items-center justify-between text-[11px] ${
-                isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'
+              <div className={`pt-3 print:pt-1 border-t flex items-center justify-between text-[11px] print:text-[7.5px] ${
+                isDark ? 'border-slate-800 text-slate-400 print:border-slate-200 print:text-slate-600' : 'border-slate-200 text-slate-500'
               }`}>
                 <span>Maior alavanca de ganho:</span>
-                <span className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                <span className={`font-bold ${isDark ? 'text-slate-200 print:text-slate-900' : 'text-slate-800'}`}>
                   {grossCommissionSlices[0] ? `${grossCommissionSlices[0].label} (${grossCommissionSlices[0].percent.toFixed(1).replace('.', ',')}%)` : 'N/D'}
                 </span>
               </div>
@@ -3042,25 +2901,25 @@ export default function App() {
           </div>
         </section>
 
-        {/* 4. SEÇÃO: LANÇAMENTO DE VENDAS (DESKTOP TABLE + MOBILE ACCORDION CARDS) */}
-        <section className="w-full px-4 sm:px-8 mt-6 print:px-0 print:mt-0 print:space-y-0 print-avoid-break">
-          <div className="mb-4 print:hidden">
-            <h2 className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+        {/* 4. SEÇÃO: LANÇAMENTO DE VENDAS (PAGE 2 NA IMPRESSÃO) */}
+        <section className="w-full px-4 sm:px-8 mt-6 print:px-0 print:mt-0 print:pt-3 print:break-before-page">
+          <div className="mb-4 print:mb-2">
+            <h2 className={`text-xl sm:text-2xl font-bold tracking-tight print:text-sm print:font-black ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
               Lançamento de Vendas
             </h2>
-            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <p className={`text-xs mt-0.5 print:text-[8.5px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Insira os dados individuais de cada venda realizada na competência
             </p>
-            <div className="flex flex-wrap items-center gap-3 mt-3">
-              <div className={`text-xs font-medium px-3 py-1.5 rounded-xl shadow-xs border ${
+            <div className="flex flex-wrap items-center gap-3 mt-3 print:mt-1">
+              <div className={`text-xs print:text-[8px] font-medium px-3 py-1.5 print:px-2 print:py-0.5 rounded-xl print:rounded-lg shadow-xs border ${
                 isDark ? 'text-slate-300 bg-slate-900/80 border-slate-800' : 'text-slate-700 bg-white border-slate-200'
               }`}>
-                Total de registros: <strong className={`font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{activeSales.length}</strong>
+                Total de registros: <strong className={`font-bold tabular-nums ${isDark ? 'text-white print:text-slate-900' : 'text-slate-900'}`}>{activeSales.length}</strong>
               </div>
               <button
                 type="button"
                 onClick={() => setIsSalesCollapsed(prev => !prev)}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-500 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-500 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer print:hidden"
               >
                 {isSalesCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                 <span>{isSalesCollapsed ? 'Mostrar Lançamentos' : 'Recolher Lançamentos'}</span>
@@ -3068,99 +2927,99 @@ export default function App() {
             </div>
           </div>
 
-          {/* DESKTOP VIEW: Fluid Wide Table */}
-          <div className={`hidden lg:block rounded-2xl overflow-hidden shadow-2xl transition-colors print:border print:border-slate-300 print:rounded-xl print:shadow-none print:overflow-visible print:mb-2.5 ${
+          {/* DESKTOP & PRINT TABLE VIEW */}
+          <div className={`hidden lg:block print:block rounded-2xl overflow-hidden shadow-2xl transition-colors print:border print:border-slate-300 print:rounded-xl print:shadow-none print:overflow-visible print:mb-0 ${
             isDark
               ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 text-slate-100'
               : 'bg-white border border-slate-200/90 text-slate-800'
           }`}>
             <div className="w-full overflow-x-auto print:overflow-visible">
-              <table className="w-full min-w-full text-left text-xs whitespace-nowrap print:text-[7.8px] print:w-full print:table-fixed">
+              <table className="w-full min-w-full text-left text-xs whitespace-nowrap print:table print:w-full print:text-[8px] print:table-fixed">
                 
-                {/* Print Colgroup Width Allocation */}
+                {/* Print Column Allocations (100% total) */}
                 <colgroup className="hidden print:table-column-group">
-                  <col className="w-[14%]" style={{ width: '14%' }} />
-                  <col className="w-[11%]" style={{ width: '11%' }} />
-                  <col className="w-[8%]" style={{ width: '8%' }} />
-                  <col className="w-[7.5%]" style={{ width: '7.5%' }} />
-                  <col className="w-[7.5%]" style={{ width: '7.5%' }} />
-                  <col className="w-[5.5%]" style={{ width: '5.5%' }} />
-                  <col className="w-[6.5%]" style={{ width: '6.5%' }} />
-                  <col className="w-[7%]" style={{ width: '7%' }} />
-                  <col className="w-[6.5%]" style={{ width: '6.5%' }} />
-                  <col className="w-[6.5%]" style={{ width: '6.5%' }} />
-                  <col className="w-[6.5%]" style={{ width: '6.5%' }} />
-                  <col className="w-[6.5%]" style={{ width: '6.5%' }} />
-                  <col className="w-[6.5%]" style={{ width: '6.5%' }} />
+                  <col style={{ width: '14%' }} />
+                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '7.5%' }} />
+                  <col style={{ width: '7.5%' }} />
+                  <col style={{ width: '5.5%' }} />
+                  <col style={{ width: '6.5%' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '6.5%' }} />
+                  <col style={{ width: '6.5%' }} />
+                  <col style={{ width: '6.5%' }} />
+                  <col style={{ width: '6.5%' }} />
+                  <col style={{ width: '6.5%' }} />
                 </colgroup>
 
                 <thead className={`border-b uppercase tracking-wider text-[11px] font-semibold print:bg-slate-100 print:text-[7.8px] print:border-b print:border-slate-300 ${
                   isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-700'
                 }`}>
                   <tr>
-                    <th className="px-3 py-3 font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[14%] truncate">Cliente</th>
-                    <th className="px-3 py-3 font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[11%] truncate">Carro</th>
+                    <th className="px-3 py-3 font-semibold print:text-slate-900 print:px-1.5 print:py-1 truncate">Cliente</th>
+                    <th className="px-3 py-3 font-semibold print:text-slate-900 print:px-1.5 print:py-1 truncate">Carro</th>
 
-                    <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[8%]">
+                    <th className="px-3 py-2.5 text-right print:px-1 print:py-1">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold print:text-slate-900 print:text-[7.8px]">VN (R$)</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.2px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.vnBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[7.5%]">
+                    <th className="px-3 py-2.5 text-right print:px-1 print:py-1">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold print:text-slate-900 print:text-[7.8px]">Margem</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.2px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.marginBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[7.5%]">
+                    <th className="px-3 py-2.5 text-right print:px-1 print:py-1">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold print:text-slate-900 print:text-[7.8px]">F&I (R$)</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.2px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.fAndIBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-3 text-center font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[5.5%]">Retorno</th>
+                    <th className="px-3 py-3 text-center font-semibold print:text-slate-900 print:px-1 print:py-1">Retorno</th>
                     
-                    <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[6.5%]">
+                    <th className="px-3 py-2.5 text-right print:px-1 print:py-1">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold print:text-slate-900 print:text-[7.8px]">SPF</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.2px] print:mt-0 print:font-bold">
                           Penetr: {formatPercent(metrics.spfPenetration)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[7%]">
+                    <th className="px-3 py-2.5 text-right print:px-1 print:py-1">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold print:text-slate-900 print:text-[7.8px]">Acessórios</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.2px] print:mt-0 print:font-bold">
                           T.M: {formatBRL(metrics.accTicketHeader)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2.5 text-right print:px-1 print:py-0.5 print:w-[6.5%]">
+                    <th className="px-3 py-2.5 text-right print:px-1 print:py-1">
                       <div className="flex flex-col items-end">
                         <span className="font-semibold print:text-slate-900 print:text-[7.8px]">Autobox</span>
-                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.5px] print:mt-0 print:font-bold">
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.2px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.autoboxBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Emplac.</th>
-                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Seguro</th>
-                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Bônus</th>
-                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-0.5 print:w-[6.5%]">Usados C.</th>
+                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-1">Emplac.</th>
+                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-1">Seguro</th>
+                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-1">Bônus</th>
+                    <th className="px-3 py-3 text-right font-semibold print:text-slate-900 print:px-1 print:py-1">Usados C.</th>
                     <th className="px-2 py-3 text-center font-semibold print:hidden w-12">Ações</th>
                   </tr>
                 </thead>
@@ -3170,14 +3029,14 @@ export default function App() {
                 } ${isSalesCollapsed ? 'hidden print:table-row-group' : ''}`}>
                   {activeSales.length === 0 ? (
                     <tr>
-                      <td colSpan="14" className="text-center py-16 print:py-4 px-4">
+                      <td colSpan="14" className="text-center py-16 print:py-6 px-4">
                         <div className="max-w-md mx-auto flex flex-col items-center justify-center text-center">
                           <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center text-slate-500 mb-3 shadow-inner print:hidden ${
                             isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-200'
                           }`}>
                             <ClipboardList size={26} strokeWidth={1.8} />
                           </div>
-                          <h4 className={`text-sm font-bold tracking-tight ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                          <h4 className={`text-sm font-bold tracking-tight print:text-xs ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
                             Nenhuma venda registrada neste mês
                           </h4>
                           <p className={`text-xs mt-1 max-w-sm print:hidden ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -3202,13 +3061,13 @@ export default function App() {
                           isDark ? 'hover:bg-slate-850/40' : 'hover:bg-slate-50/70'
                         }`}
                       >
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[14%] truncate">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5 truncate">
                           <input 
                             type="text" 
                             value={sale.client} 
                             onChange={(e) => handleSaleChange(sale.id, 'client', e.target.value)}
                             placeholder={`Cliente ${index + 1}`}
-                            className={`w-36 min-w-[150px] border text-xs font-medium rounded-xl px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.8px] print:text-slate-900 print:truncate print:h-auto print:w-full print:min-w-0 ${
+                            className={`w-36 min-w-[150px] border text-xs font-medium rounded-xl px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[8px] print:text-slate-900 print:truncate print:h-auto print:w-full print:min-w-0 ${
                               isDark 
                                 ? 'bg-slate-950/70 hover:bg-slate-950 focus:bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600'
                                 : 'bg-slate-50/70 hover:bg-white focus:bg-white border-slate-200 text-slate-800 placeholder:text-slate-400'
@@ -3216,13 +3075,13 @@ export default function App() {
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[11%] truncate">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5 truncate">
                           <input 
                             type="text" 
                             value={sale.car} 
                             onChange={(e) => handleSaleChange(sale.id, 'car', e.target.value)}
                             placeholder="Modelo"
-                            className={`w-36 min-w-[140px] border text-xs font-medium rounded-xl px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.8px] print:text-slate-900 print:truncate print:h-auto print:w-full print:min-w-0 ${
+                            className={`w-36 min-w-[140px] border text-xs font-medium rounded-xl px-2.5 py-1.5 transition-all focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[8px] print:text-slate-900 print:truncate print:h-auto print:w-full print:min-w-0 ${
                               isDark 
                                 ? 'bg-slate-950/70 hover:bg-slate-950 focus:bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600'
                                 : 'bg-slate-50/70 hover:bg-white focus:bg-white border-slate-200 text-slate-800 placeholder:text-slate-400'
@@ -3230,38 +3089,38 @@ export default function App() {
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[8%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.vn} 
                             onChange={(v) => handleSaleChange(sale.id, 'vn', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[7.5%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.margin} 
                             onChange={(v) => handleSaleChange(sale.id, 'margin', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[7.5%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.fAndI} 
                             onChange={(v) => handleSaleChange(sale.id, 'fAndI', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[5.5%] text-center">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5 text-center">
                           <select 
                             value={sale.returnFAndI} 
                             onChange={(e) => handleSaleChange(sale.id, 'returnFAndI', e.target.value)}
-                            className={`w-24 min-w-[95px] border text-xs font-semibold rounded-xl px-2 py-1.5 text-center focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 transition-all cursor-pointer print:bg-transparent print:border-none print:appearance-none print:p-0 print:text-[7.8px] print:text-center print:text-slate-900 print:w-full print:min-w-0 ${
+                            className={`w-24 min-w-[95px] border text-xs font-semibold rounded-xl px-2 py-1.5 text-center focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 transition-all cursor-pointer print:bg-transparent print:border-none print:appearance-none print:p-0 print:text-[8px] print:text-center print:text-slate-900 print:w-full print:min-w-0 ${
                               isDark
                                 ? 'bg-slate-950/70 hover:bg-slate-950 focus:bg-slate-950 border-slate-800 text-slate-200'
                                 : 'bg-slate-50/70 hover:bg-white focus:bg-white border-slate-200 text-slate-800'
@@ -3275,64 +3134,64 @@ export default function App() {
                           </select>
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.spf} 
                             onChange={(v) => handleSaleChange(sale.id, 'spf', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[7%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.accessories} 
                             onChange={(v) => handleSaleChange(sale.id, 'accessories', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.autobox} 
                             onChange={(v) => handleSaleChange(sale.id, 'autobox', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.emplacamento} 
                             onChange={(v) => handleSaleChange(sale.id, 'emplacamento', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.seguro} 
                             onChange={(v) => handleSaleChange(sale.id, 'seguro', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.bonusCarro} 
                             onChange={(v) => handleSaleChange(sale.id, 'bonusCarro', v)} 
                           />
                         </td>
 
-                        <td className="px-2 py-2 print:px-1 print:py-0.5 print:w-[6.5%]">
+                        <td className="px-2 py-2 print:px-1.5 print:py-0.5">
                           <CurrencyInput 
                             theme={theme}
-                            className="w-28 min-w-[115px] text-right text-xs" 
+                            className="w-28 min-w-[115px] text-right text-xs print:text-[8px]" 
                             value={sale.usadosCaptados} 
                             onChange={(v) => handleSaleChange(sale.id, 'usadosCaptados', v)} 
                           />
@@ -3660,249 +3519,6 @@ export default function App() {
             </div>
           </div>
         </section>
-
-        {/* Print Bottom Section: Balanced Audit Grid (strictly for @media print) */}
-        <div className="hidden print:grid print:grid-cols-12 print:gap-3 print:mt-3 print:mb-0 print-avoid-break">
-          
-          {/* Bloco 1: Memória de Cálculo (6 colunas) */}
-          <div className="print:col-span-6 border border-slate-200 rounded-xl bg-white p-3 flex flex-col justify-between print-avoid-break">
-            <div>
-              <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-1.5 text-slate-900">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-4 h-4 rounded bg-sky-50 text-sky-600 flex items-center justify-center">
-                    <Calculator size={11} />
-                  </div>
-                  <h3 className="text-[9.5px] font-bold tracking-tight text-slate-900 uppercase">
-                    Memória de Cálculo — Apuração da Comissão Bruta
-                  </h3>
-                </div>
-                <span className="text-[8px] text-slate-500 font-semibold">
-                  Regras Contratuais
-                </span>
-              </div>
-
-              <div className="bg-slate-50/70 border border-slate-200 rounded-lg p-2 text-[8.5px]">
-                <div className="grid grid-cols-2 gap-x-4">
-                  <div className="space-y-1 divide-y divide-slate-100">
-                    <div className="flex items-center justify-between pt-0.5">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">1. Valor da Nota (VN)</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.vnBase)} × {formatPercent(metrics.vnTier)}</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionVn)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">2. Margem</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.marginBase)} × {formatPercent(metrics.marginTier)}</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionMargin)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">3. Retorno F&I</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.fAndIBaseRetorno)} × {formatPercent(metrics.fAndIAccelerator)}</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionRetornoFAndI)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">4. SPF</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">{metrics.spfCount} contr. × R$ 100,00</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionSpf)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">5. Acessórios</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.accBase)} × {formatPercent(metrics.accTier)}</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionAcc)}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 divide-y divide-slate-100">
-                    <div className="flex items-center justify-between pt-0.5">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">6. Autobox</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.autoboxBase)} × 4,5%</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionAutobox)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">7. Emplacamento</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">Base {formatBRL(metrics.empBase)} × {formatPercent(metrics.empTier)}</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionEmp)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">8. Premiações Diretas</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">Seguro + Bônus + Usados C.</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.commissionDirects)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">9. DSR (20%)</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">20% s/ VN + Margem + Retorno</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.dsr)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="truncate pr-1">
-                        <span className="font-semibold text-slate-800 block truncate">10. Extras Manuais</span>
-                        <span className="text-[7.5px] text-slate-500 truncate block">Usados + Águia + Líder + NPS</span>
-                      </div>
-                      <span className="font-bold text-slate-900 shrink-0">{formatBRL(metrics.extrasTotal)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-sky-50 border border-sky-200 rounded-lg p-1.5 px-2.5 flex justify-between items-center mt-1.5">
-              <div>
-                <span className="text-[9px] font-bold text-sky-950 block leading-tight">Total Geral Bruto Apurado</span>
-                <span className="text-[8px] text-sky-700 leading-tight">
-                  Previsão Líquida ({activeNetPercentage.toFixed(2)}%): <strong className="font-bold text-slate-900">{formatBRL(metrics.netCommission)}</strong>
-                </span>
-              </div>
-              <span className="text-base font-black text-sky-700">{formatBRL(metrics.grossCommission)}</span>
-            </div>
-          </div>
-
-          {/* Bloco 2: Volume por Modelo (3 colunas) */}
-          <div className="print:col-span-3 border border-slate-200 rounded-xl p-3 bg-white flex flex-col justify-between print-avoid-break">
-            <div>
-              <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-1.5 text-slate-900">
-                <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 rounded bg-sky-50 text-sky-600 flex items-center justify-center">
-                    <BarChart3 size={11} />
-                  </div>
-                  <h4 className="text-[9px] font-bold text-slate-900 uppercase">
-                    Volume por Modelo
-                  </h4>
-                </div>
-                <span className="text-[7.5px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded">
-                  {modelVolumeData.length} mod.
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                {modelVolumeData.length === 0 ? (
-                  <div className="py-4 text-center text-[8px] text-slate-400">
-                    Nenhum modelo cadastrado
-                  </div>
-                ) : (
-                  modelVolumeData.slice(0, 5).map((item, idx) => {
-                    const maxCount = modelVolumeData[0]?.count || 1;
-                    const barWidth = Math.max(10, (item.count / maxCount) * 100);
-
-                    return (
-                      <div key={item.model} className="p-0.5 px-1 rounded border border-slate-100 bg-slate-50/50">
-                        <div className="flex items-center justify-between text-[8px] mb-0.5">
-                          <div className="flex items-center gap-1 min-w-0 pr-1 truncate">
-                            <span className="w-3 h-3 rounded bg-slate-200 text-slate-800 text-[6.5px] font-bold flex items-center justify-center shrink-0">
-                              #{idx + 1}
-                            </span>
-                            <span className="font-bold text-slate-800 truncate">{item.model}</span>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0 font-mono">
-                            <span className="font-black text-slate-900">{item.count} un.</span>
-                            <span className="text-[7px] font-bold text-sky-700 bg-sky-50 px-1 py-0.2 rounded border border-sky-100">
-                              {item.percentage.toFixed(0)}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="w-full bg-slate-200/80 rounded-full h-1 overflow-hidden">
-                          <div 
-                            style={{ width: `${barWidth}%` }}
-                            className="h-full rounded-full bg-sky-600"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Bloco 3: Composição da Comissão Bruta (3 colunas) */}
-          <div className="print:col-span-3 border border-slate-200 rounded-xl p-3 bg-white flex flex-col justify-between print-avoid-break">
-            <div>
-              <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-1 text-slate-900">
-                <div className="flex items-center gap-1">
-                  <div className="w-4 h-4 rounded bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                    <PieChart size={11} />
-                  </div>
-                  <h4 className="text-[9px] font-bold text-slate-900 uppercase">
-                    Composição Bruta
-                  </h4>
-                </div>
-                <span className="text-[7.5px] font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded border border-indigo-100">
-                  {grossCommissionSlices.length} fontes
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between gap-2 pt-1">
-                {grossCommissionSlices.length === 0 ? (
-                  <div className="py-4 text-center text-[8px] text-slate-400 w-full">
-                    Nenhuma receita lançada
-                  </div>
-                ) : (
-                  <>
-                    <div className="relative w-[145px] h-[145px] shrink-0 flex items-center justify-center">
-                      <svg width="145" height="145" viewBox="0 0 260 260" className="w-full h-full transform -rotate-90">
-                        {donutGeometry.map((slice) => (
-                          <path
-                            key={slice.id}
-                            d={slice.pathData}
-                            fill={slice.color}
-                          />
-                        ))}
-                      </svg>
-                      <div className="absolute inset-0 m-auto w-[62px] h-[62px] rounded-full bg-white border border-slate-200 flex flex-col items-center justify-center text-center p-0.5 pointer-events-none">
-                        <span className="text-[6.5px] font-bold text-slate-400 uppercase leading-none">Total</span>
-                        <span className="text-[7.5px] font-black text-slate-900 truncate max-w-[56px] mt-0.5 font-mono">
-                          {formatBRL(metrics.grossCommission)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 space-y-0.5 text-[7.5px] min-w-0">
-                      {grossCommissionSlices.slice(0, 6).map((slice) => (
-                        <div key={slice.id} className="flex items-center justify-between py-0.5 px-0.5 border-b border-slate-50 last:border-none">
-                          <div className="flex items-center gap-1 min-w-0 pr-0.5 truncate">
-                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
-                            <span className="font-medium text-slate-700 truncate">{slice.shortLabel || slice.label}</span>
-                          </div>
-                          <div className="flex items-center gap-0.5 shrink-0 font-mono">
-                            <span className="font-bold text-slate-900">{formatBRL(slice.value)}</span>
-                            <span className="text-[6.5px] font-bold text-slate-500 w-4 text-right">
-                              {slice.percent.toFixed(0)}%
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-        </div>
 
       </div>
     );
@@ -4687,10 +4303,17 @@ export default function App() {
 
       {/* Global CSS for Print and Themes */}
       <style>{`
+        @page {
+          size: A4 landscape;
+          margin: 6mm 8mm;
+        }
         @media print {
-          @page {
-            size: A4 landscape;
-            margin: 5mm 7mm;
+          html, body, #root {
+            background: transparent !important;
+            overflow: visible !important;
+            height: auto !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           * {
             -webkit-print-color-adjust: exact !important;
@@ -4698,33 +4321,16 @@ export default function App() {
             box-shadow: none !important;
             text-shadow: none !important;
           }
-          html, body, #root, div {
-            background-color: #ffffff !important;
-            color: #0f172a !important;
-          }
-          html, body {
-            font-size: 8px !important;
-            line-height: 1.15 !important;
-            width: 100% !important;
-            height: 100% !important;
-            overflow: hidden !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
           .print-avoid-break {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
-          }
-          .print-dark-card {
-            background-color: #0f172a !important;
-            color: #ffffff !important;
           }
           table {
             table-layout: fixed !important;
             width: 100% !important;
           }
           th, td {
-            padding: 1px 3px !important;
+            padding: 1.5px 3px !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
@@ -4735,7 +4341,7 @@ export default function App() {
             padding: 1px 3px !important;
             background: transparent !important;
             color: #0f172a !important;
-            font-size: 7.8px !important;
+            font-size: 8px !important;
             height: auto !important;
             width: 100% !important;
             min-width: 0 !important;
