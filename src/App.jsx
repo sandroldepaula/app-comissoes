@@ -559,7 +559,7 @@ function MonthlyPerformanceChart({ months = [], salesByMonth = {}, formatBRL, is
             </span>
           </div>
           <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Linha do tempo dinâmica dos últimos 10 meses apurados terminando na competência atual
+            Linha do tempo dinâmica dos últimos 10 meses apurados terminando no mês atual
           </p>
         </div>
 
@@ -2128,7 +2128,7 @@ export default function App() {
 
   const renderHubScreen = () => {
     return (
-      <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-8 py-8 space-y-8 animate-in fade-in duration-200">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
         {/* Hub Welcome Banner with Controlled Depth */}
         <div className={`flex flex-col md:flex-row md:items-center justify-between gap-6 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden transition-colors ${
           isDark
@@ -2138,16 +2138,18 @@ export default function App() {
           <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-bold uppercase tracking-wider text-sky-500 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
-                Multi-Competência
+                Multi-Meses
               </span>
-              <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Gestão Comercial Automotiva
+              <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                isDark ? 'text-slate-300 bg-slate-800/80 border-slate-700' : 'text-slate-600 bg-slate-100 border-slate-200'
+              }`}>
+                Controle Salarial Mensal
               </span>
             </div>
             <h2 className={`text-2xl md:text-3xl font-black tracking-tight mt-2.5 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-              Competências Comerciais
+              Lançamentos de Vendas por Mês
             </h2>
             <p className={`text-xs md:text-sm mt-1 max-w-xl leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Monitore seus fechamentos mensais, acompanhe o atingimento de metas e apure previsões líquidas com precisão.
@@ -2393,10 +2395,10 @@ export default function App() {
     if (!activeMonth) return null;
 
     return (
-      <div className="w-full max-w-[1720px] mx-auto space-y-6 print:space-y-0 animate-in fade-in duration-200">
+      <div className="w-full max-w-7xl mx-auto space-y-6 print:space-y-0 animate-in fade-in duration-200">
         
         {/* Navigation Bar for Selected Month */}
-        <div className="w-full px-4 sm:px-8 pt-4 sm:pt-6 print:hidden">
+        <div className="w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 print:hidden">
           <div className={`rounded-2xl p-4 sm:px-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
             isDark
               ? 'bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 border-t border-t-white/10 shadow-black/40 text-slate-100'
@@ -3926,87 +3928,86 @@ export default function App() {
       )}
 
       {/* Main Top Header with Theme Switcher, Profile & Glass finish */}
-      <header className={`w-full sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8 py-3.5 border-b backdrop-blur-xl transition-colors print:hidden ${
+      <header className={`w-full sticky top-0 z-30 border-b backdrop-blur-xl transition-colors print:hidden ${
         isDark ? 'bg-slate-950/80 border-slate-800/80 text-slate-100' : 'bg-white/90 border-slate-200/80 text-slate-800 shadow-xs'
       }`}>
-        <div 
-          className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group" 
-          onClick={() => setCurrentScreen('HUB')}
-        >
-          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl border flex items-center justify-center text-sky-500 shadow-inner group-hover:border-sky-500/50 transition-colors shrink-0 ${
-            isDark ? 'bg-slate-900 border-slate-800' : 'bg-sky-50 border-sky-200'
-          }`}>
-            <Car size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.2} />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <h1 className={`text-base sm:text-lg font-black tracking-tight leading-none transition-colors ${
-                isDark ? 'text-slate-100 group-hover:text-white' : 'text-slate-900 group-hover:text-sky-600'
-              }`}>
-                Gestão & Comissões Auto
-              </h1>
-              <span className="bg-sky-500/10 text-sky-500 border border-sky-500/20 text-[9px] sm:text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full hidden sm:inline-block">
-                MULTI-MESES
-              </span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+          <div 
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group" 
+            onClick={() => setCurrentScreen('HUB')}
+          >
+            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl border flex items-center justify-center text-sky-500 shadow-inner group-hover:border-sky-500/50 transition-colors shrink-0 ${
+              isDark ? 'bg-slate-900 border-slate-800' : 'bg-sky-50 border-sky-200'
+            }`}>
+              <Car size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.2} />
             </div>
-            <p className={`text-xs font-normal mt-0.5 hidden md:block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Controle comercial executivo & sincronização em nuvem
-            </p>
+            <div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h1 className={`text-base sm:text-lg font-black tracking-tight leading-none transition-colors ${
+                  isDark ? 'text-slate-100 group-hover:text-white' : 'text-slate-900 group-hover:text-sky-600'
+                }`}>
+                  Gestão & Comissões Auto
+                </h1>
+              </div>
+              <p className={`text-xs font-normal mt-1 hidden md:block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Previsão de salário e comissões do vendedor
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* User Profile Chip with Controlled Depth */}
-          <div className={`flex items-center gap-2 sm:gap-2.5 border rounded-2xl py-1 sm:py-1.5 px-2.5 sm:px-3 shadow-inner ${
-            isDark ? 'bg-slate-900/80 border-slate-800/90' : 'bg-slate-50 border-slate-200'
-          }`}>
-            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-sky-600 to-sky-400 text-slate-950 flex items-center justify-center font-black text-xs uppercase shadow-xs shrink-0">
-              {userDisplayName.charAt(0)}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* User Profile Chip with Controlled Depth */}
+            <div className={`flex items-center gap-2 sm:gap-2.5 border rounded-2xl py-1 sm:py-1.5 px-2.5 sm:px-3 shadow-inner ${
+              isDark ? 'bg-slate-900/80 border-slate-800/90' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-sky-600 to-sky-400 text-slate-950 flex items-center justify-center font-black text-xs uppercase shadow-xs shrink-0">
+                {userDisplayName.charAt(0)}
+              </div>
+              <div className="hidden sm:block text-left">
+                <span className={`text-xs font-bold block leading-none ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                  {userDisplayName}
+                </span>
+                <span className={`text-[10px] block leading-tight truncate max-w-[130px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {user?.email}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 p-1.5 rounded-xl transition-all cursor-pointer ml-0.5 sm:ml-1 shrink-0"
+                title="Sair da Conta"
+              >
+                <LogOut size={15} />
+              </button>
             </div>
-            <div className="hidden sm:block text-left">
-              <span className={`text-xs font-bold block leading-none ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                {userDisplayName}
-              </span>
-              <span className={`text-[10px] block leading-tight truncate max-w-[130px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {user?.email}
-              </span>
-            </div>
+
+            {/* Theme Toggle Button in Header */}
             <button
               type="button"
-              onClick={handleLogout}
-              className="text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 p-1.5 rounded-xl transition-all cursor-pointer ml-0.5 sm:ml-1 shrink-0"
-              title="Sair da Conta"
+              onClick={toggleTheme}
+              aria-label={`Mudar para Modo ${isDark ? 'Claro' : 'Escuro'}`}
+              title={`Mudar para Modo ${isDark ? 'Claro' : 'Escuro'}`}
+              className={`p-2 sm:p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 active:scale-95 ${
+                isDark
+                  ? 'bg-slate-900/80 border-slate-800/90 text-amber-400 hover:bg-slate-800 hover:text-amber-300 hover:border-slate-700'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300'
+              }`}
             >
-              <LogOut size={15} />
+              {isDark ? <Sun size={16} strokeWidth={2.2} /> : <Moon size={16} strokeWidth={2.2} />}
             </button>
+
+            {currentScreen === 'DETAIL' && (
+              <button 
+                type="button"
+                onClick={() => window.print()} 
+                className="inline-flex items-center justify-center gap-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold px-2.5 py-2 sm:px-3.5 sm:py-2 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer shrink-0"
+                title="Imprimir ou salvar em PDF"
+              >
+                <Printer size={14} className="shrink-0" />
+                <span className="hidden sm:inline">Exportar </span><span>PDF</span>
+              </button>
+            )}
           </div>
-
-          {/* Theme Toggle Button in Header */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={`Mudar para Modo ${isDark ? 'Claro' : 'Escuro'}`}
-            title={`Mudar para Modo ${isDark ? 'Claro' : 'Escuro'}`}
-            className={`p-2 sm:p-2.5 rounded-xl border transition-all cursor-pointer shrink-0 active:scale-95 ${
-              isDark
-                ? 'bg-slate-900/80 border-slate-800/90 text-amber-400 hover:bg-slate-800 hover:text-amber-300 hover:border-slate-700'
-                : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 hover:border-slate-300'
-            }`}
-          >
-            {isDark ? <Sun size={16} strokeWidth={2.2} /> : <Moon size={16} strokeWidth={2.2} />}
-          </button>
-
-          {currentScreen === 'DETAIL' && (
-            <button 
-              type="button"
-              onClick={() => window.print()} 
-              className="inline-flex items-center justify-center gap-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold px-2.5 py-2 sm:px-3.5 sm:py-2 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] cursor-pointer shrink-0"
-              title="Imprimir ou salvar em PDF"
-            >
-              <Printer size={14} className="shrink-0" />
-              <span className="hidden sm:inline">Exportar </span><span>PDF</span>
-            </button>
-          )}
         </div>
       </header>
 
