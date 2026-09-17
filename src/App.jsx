@@ -465,14 +465,14 @@ function MonthlyPerformanceChart({ months = [], salesByMonth = {}, formatBRL, is
   const bottomY = padTop + plotH; // yZero (linha de base 0)
 
   // Escalas padronizadas de 4 linhas de grade com teto fixo
-  const maxVolume = 30;
+  const maxVolume = 26;
   const maxSalary = 30000;
 
   const points = useMemo(() => {
     const n = timelineData.length;
     return timelineData.map((d, i) => {
       const x = padLeft + (i / (n - 1)) * plotW;
-      // Cálculo Y independente para Veículos (Eixo Esquerdo: 0 a 30)
+      // Cálculo Y independente para Veículos (Eixo Esquerdo: 0 a 26)
       const yVol = bottomY - (Math.min(d.volume, maxVolume) / maxVolume) * plotH;
       // Cálculo Y independente para Salário Bruto (Eixo Direito: R$ 0 a R$ 30.000)
       const yGross = bottomY - (Math.min(d.grossCommission, maxSalary) / maxSalary) * plotH;
@@ -572,7 +572,7 @@ function MonthlyPerformanceChart({ months = [], salesByMonth = {}, formatBRL, is
               <polygon points="6,1 1,11 11,11" fill="#38bdf8" stroke={isDark ? "#0284c7" : "#0284c7"} strokeWidth="1" />
             </svg>
             <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-              Veículos Faturados <span className="text-[10px] text-slate-500">(Eixo Esq. 0 a 30)</span>
+              Veículos Faturados <span className="text-[10px] text-slate-500">(Eixo Esq. 0 a 26)</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -682,12 +682,11 @@ function MonthlyPerformanceChart({ months = [], salesByMonth = {}, formatBRL, is
             </linearGradient>
           </defs>
 
-          {}
           {/* 4 Linhas de Grade e Rótulos Padronizados (0%, 33.3%, 66.6%, 100%) */}
           {[
-            { ratio: 1.0, vol: 30, gross: 'R$ 30k' },
-            { ratio: 2 / 3, vol: 20, gross: 'R$ 20k' },
-            { ratio: 1 / 3, vol: 10, gross: 'R$ 10k' },
+            { ratio: 1.0, vol: 26, gross: 'R$ 30k' },
+            { ratio: 2 / 3, vol: 17, gross: 'R$ 20k' },
+            { ratio: 1 / 3, vol: 8, gross: 'R$ 10k' },
             { ratio: 0.0, vol: 0, gross: 'R$ 0' }
           ].map((step, idx) => {
             const y = padTop + plotH * (1 - step.ratio);
@@ -703,7 +702,7 @@ function MonthlyPerformanceChart({ months = [], salesByMonth = {}, formatBRL, is
                   strokeDasharray="4 4"
                   strokeWidth="1"
                 />
-                {/* Eixo Esquerdo: Veículos (0, 10, 20, 30) */}
+                {/* Eixo Esquerdo: Veículos (0, 8, 17, 26) */}
                 <text
                   x={padLeft - 8}
                   y={y + 3.5}
