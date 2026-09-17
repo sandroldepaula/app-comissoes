@@ -4308,19 +4308,76 @@ export default function App() {
           margin: 6mm 8mm;
         }
         @media print {
-          html, body, #root {
-            background: transparent !important;
-            overflow: visible !important;
-            height: auto !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
+          /* 1. Base da folha: forçar fundo 100% branco e texto escuro */
+          html, body, #root, main, div:not([data-chart-element]) {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
             box-shadow: none !important;
             text-shadow: none !important;
+            overflow: visible !important;
+            height: auto !important;
           }
+
+          /* 2. Cartões, painéis e contêineres: bordas sutis no lugar de fundos escuros */
+          .rounded-xl, .rounded-2xl, .rounded-3xl, 
+          [class*="bg-slate-900"], [class*="bg-slate-950"], [class*="bg-slate-800"] {
+            background-color: #ffffff !important;
+            background: #ffffff !important;
+            border-color: #e2e8f0 !important;
+            color: #0f172a !important;
+            box-shadow: none !important;
+          }
+
+          /* 3. Textos auxiliares e legendas */
+          [class*="text-slate-400"], [class*="text-slate-500"], [class*="text-slate-300"] {
+            color: #475569 !important;
+          }
+
+          /* 4. Inputs, selects e células de tabela */
+          input, select, td, th {
+            background-color: #ffffff !important;
+            background: transparent !important;
+            color: #0f172a !important;
+            border-color: #e2e8f0 !important;
+          }
+
+          /* 5. Cabeçalhos de tabela com fundo suave e texto em destaque */
+          th {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+            font-weight: 700 !important;
+          }
+
+          /* 6. Linhas da tabela de lançamentos com borda suave */
+          tbody tr {
+            border-bottom: 1px solid #e2e8f0 !important;
+          }
+
+          /* 7. Preservação das cores de gráficos e barras */
+          svg, path, circle, polygon, rect, [role="progressbar"] {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* 8. Contraste dos destaques financeiros sobre fundo branco */
+          [class*="text-emerald-"], [class*="text-green-"] {
+            color: #059669 !important;
+          }
+          [class*="text-sky-"], [class*="text-blue-"] {
+            color: #0284c7 !important;
+          }
+          [class*="text-amber-"], [class*="text-yellow-"] {
+            color: #d97706 !important;
+          }
+
+          /* 9. Preservação de preenchimento em badges e pílulas */
+          [class*="bg-sky-500"], [class*="bg-emerald-500"], [class*="bg-amber-500"] {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* 10. Paginação e quebras de página */
           .print-avoid-break {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
@@ -4339,8 +4396,6 @@ export default function App() {
             border: none !important;
             box-shadow: none !important;
             padding: 1px 3px !important;
-            background: transparent !important;
-            color: #0f172a !important;
             font-size: 8px !important;
             height: auto !important;
             width: 100% !important;
