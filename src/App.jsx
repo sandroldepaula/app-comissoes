@@ -1052,6 +1052,17 @@ export default function App() {
   const [newSale, setNewSale] = useState(DEFAULT_SALE);
   const [draggedMonthIndex, setDraggedMonthIndex] = useState(null);
 
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  const handleSort = (key) => {
+    setSortConfig(prev => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
   const formatBRL = useCallback((val) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
   }, []);
@@ -1683,7 +1694,8 @@ export default function App() {
 
   const handleUpdateActiveMonthExtras = (field, val) => {
     if (!selectedMonthId) return;
-    const updatedExtras = { ...activeExtras, [field]: val };
+    const numericVal = typeof val === 'number' ? val : (parseFloat(val) || 0);
+    const updatedExtras = { ...activeExtras, [field]: numericVal };
 
     const nextMonths = months.map(m => {
       if (String(m.id) === String(selectedMonthId)) {
@@ -1697,6 +1709,10 @@ export default function App() {
     if (targetMonth) {
       syncMonthToSupabase(targetMonth);
     }
+  };
+
+  const handlePremioChange = (campo, valor) => {
+    handleUpdateActiveMonthExtras(campo, valor);
   };
 
   const handleUpdateActiveNetPercentage = (val) => {
@@ -2045,6 +2061,7 @@ export default function App() {
                   <input
                     type="email"
                     required
+                    tabIndex={1}
                     value={authForm.email}
                     onChange={(e) => setAuthForm(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="seuemail@exemplo.com"
@@ -2065,6 +2082,7 @@ export default function App() {
                   {authMode === 'login' && (
                     <button
                       type="button"
+                      tabIndex={4}
                       onClick={() => setAuthMode('forgot')}
                       className="text-xs font-medium text-sky-500 hover:text-sky-400 hover:underline cursor-pointer"
                     >
@@ -2079,6 +2097,7 @@ export default function App() {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
+                    tabIndex={2}
                     minLength={6}
                     value={authForm.password}
                     onChange={(e) => setAuthForm(prev => ({ ...prev, password: e.target.value }))}
@@ -2091,6 +2110,7 @@ export default function App() {
                   />
                   <button
                     type="button"
+                    tabIndex={-1}
                     onClick={() => setShowPassword(p => !p)}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
                   >
@@ -2101,6 +2121,7 @@ export default function App() {
 
               <button
                 type="submit"
+                tabIndex={3}
                 disabled={authLoading}
                 className="w-full mt-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-3 rounded-xl transition-all duration-150 shadow-lg shadow-sky-500/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
@@ -2394,6 +2415,47 @@ export default function App() {
   const renderDetailScreen = () => {
     if (!activeMonth) return null;
 
+    // Função auxiliar de conversão para ordenação numérica correta
+    const getNumeric = (val) => {
+      if (typeof val === 'number') return val;
+      if (!val) return 0;
+      return parseFloat(String(val).replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+    };
+
+    // Identifica a lista de vendas atual da competência ativa
+    const listaVendasOriginal = Array.isArray(activeSales) ? activeSales : [];
+
+    const listaVendasExibicao = [...listaVendasOriginal].sort((a, b) => {
+      if (!sortConfig.key) return 0;
+
+      const actualKey = {
+        cliente: 'client',
+        client: 'client',
+        carro: 'car',
+        car: 'car',
+        margem: 'margin',
+        margin: 'margin',
+        vn: 'vn'
+      }[sortConfig.key] || sortConfig.key;
+
+      let valA = a[actualKey] ?? a[sortConfig.key] ?? '';
+      let valB = b[actualKey] ?? b[sortConfig.key] ?? '';
+
+      // Ordenação Numérica (VN e Margem)
+      if (actualKey === 'vn' || actualKey === 'margin' || sortConfig.key === 'vn' || sortConfig.key === 'margem') {
+        const numA = getNumeric(valA);
+        const numB = getNumeric(valB);
+        return sortConfig.direction === 'asc' ? numA - numB : numB - numA;
+      }
+
+      // Ordenação Alfabética (Cliente e Carro)
+      const strA = String(valA).toLowerCase();
+      const strB = String(valB).toLowerCase();
+      return sortConfig.direction === 'asc' 
+        ? strA.localeCompare(strB, 'pt-BR') 
+        : strB.localeCompare(strA, 'pt-BR');
+    });
+
     return (
       <div className="w-full max-w-7xl mx-auto space-y-6 print:space-y-0 animate-in fade-in duration-200">
         
@@ -2611,49 +2673,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* 2. SEÇÃO: PREMIAÇÕES DO MÊS (MINI-CARDS) */}
-        <section className="w-full px-4 sm:px-8 mt-6 print:block print:px-0 print:mt-2 print:mb-2 print-avoid-break">
-          <div className="flex items-center justify-between mb-3 print:mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 print:text-[8.5px] print:font-bold">
-              Premiações do mês
-            </span>
-            <span className={`text-xs font-medium print:text-[8.5px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Soma total: <strong className={`tabular-nums ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{formatBRL(metrics.extrasTotal)}</strong>
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 print:grid-cols-4 print:gap-2">
-            {[
-              { label: 'Prêmio Usados', val: activeExtras.premioUsados, icon: Award },
-              { label: 'Prêmio Águia', val: activeExtras.premioAguia, icon: TrendingUp },
-              { label: 'Prêmio Líder', val: activeExtras.premioLider, icon: Sparkles },
-              { label: 'Prêmio NPS', val: activeExtras.premioNps, icon: CheckCircle2 }
-            ].map((p, idx) => {
-              const IconComp = p.icon;
-              return (
-                <div key={idx} className={`rounded-2xl p-3.5 flex items-center justify-between shadow-xl transition-colors print:p-2 print:rounded-xl print:border print:border-slate-300 print:bg-white print:text-slate-900 print:shadow-none ${
-                  isDark
-                    ? 'bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 text-slate-100'
-                    : 'bg-white border border-slate-200/80 text-slate-800 shadow-slate-100'
-                }`}>
-                  <div className="flex items-center gap-2.5 print:gap-1.5">
-                    <div className={`w-8 h-8 rounded-xl border text-sky-500 flex items-center justify-center shadow-inner print:w-6 print:h-6 print:rounded-lg print:border-slate-300 print:bg-slate-100 ${
-                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-sky-50 border-sky-200'
-                    }`}>
-                      <IconComp size={15} className="print:w-3.5 print:h-3.5" />
-                    </div>
-                    <div>
-                      <span className={`block text-[11px] font-medium leading-none print:text-[8px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{p.label}</span>
-                      <span className={`text-sm font-bold mt-1 block tabular-nums print:text-[9.5px] print:mt-0.5 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(p.val)}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* 3. SEÇÃO: INTELIGÊNCIA COMERCIAL & ANÁLISE BI ANALYTICS */}
+        {/* SEÇÃO: INTELIGÊNCIA COMERCIAL & ANÁLISE BI ANALYTICS */}
         <section className="w-full print:block print:px-0 print:mt-2 print:mb-0 print-avoid-break">
           <div className="w-full px-6 sm:px-8 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 print:px-0 print:pt-0">
             <div>
@@ -2967,22 +2987,44 @@ export default function App() {
                 <thead className={`border-b uppercase tracking-wider text-[11px] font-semibold print:bg-slate-100 print:text-[7.8px] print:border-b print:border-slate-300 ${
                   isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-700'
                 }`}>
+                  {}
                   <tr>
-                    <th className="px-3 py-3 font-semibold print:text-slate-900 print:px-1.5 print:py-1 truncate">Cliente</th>
-                    <th className="px-3 py-3 font-semibold print:text-slate-900 print:px-1.5 print:py-1 truncate">Carro</th>
+                    <th 
+                      onClick={() => handleSort('cliente')}
+                      className="px-3 py-3 font-semibold print:text-slate-900 print:px-1.5 print:py-1 truncate cursor-pointer select-none hover:text-sky-400 transition-colors"
+                    >
+                      CLIENTE {(sortConfig.key === 'cliente' || sortConfig.key === 'client') ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                    </th>
 
-                    <th className="px-3 py-2.5 text-right print:px-1 print:py-1">
+                    <th 
+                      onClick={() => handleSort('carro')}
+                      className="px-3 py-3 font-semibold print:text-slate-900 print:px-1.5 print:py-1 truncate cursor-pointer select-none hover:text-sky-400 transition-colors"
+                    >
+                      CARRO {(sortConfig.key === 'carro' || sortConfig.key === 'car') ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                    </th>
+
+                    <th 
+                      onClick={() => handleSort('vn')}
+                      className="px-3 py-2.5 text-right print:px-1 print:py-1 cursor-pointer select-none hover:text-sky-400 transition-colors"
+                    >
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">VN (R$)</span>
+                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">
+                          VN (R$) {sortConfig.key === 'vn' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                        </span>
                         <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.2px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.vnBase)}
                         </span>
                       </div>
                     </th>
 
-                    <th className="px-3 py-2.5 text-right print:px-1 print:py-1">
+                    <th 
+                      onClick={() => handleSort('margem')}
+                      className="px-3 py-2.5 text-right print:px-1 print:py-1 cursor-pointer select-none hover:text-sky-400 transition-colors"
+                    >
                       <div className="flex flex-col items-end">
-                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">Margem</span>
+                        <span className="font-semibold print:text-slate-900 print:text-[7.8px]">
+                          MARGEM {(sortConfig.key === 'margem' || sortConfig.key === 'margin') ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}
+                        </span>
                         <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono tracking-tight bg-sky-500/15 text-sky-500 border border-sky-500/30 print:bg-transparent print:border-none print:p-0 print:text-[7.2px] print:mt-0 print:font-bold">
                           Tot: {formatBRL(metrics.marginBase)}
                         </span>
@@ -3038,7 +3080,8 @@ export default function App() {
                 <tbody className={`divide-y print:divide-slate-200 ${
                   isDark ? 'divide-slate-800/80' : 'divide-slate-100'
                 } ${isSalesCollapsed ? 'hidden print:table-row-group' : ''}`}>
-                  {activeSales.length === 0 ? (
+                  {}
+                  {listaVendasExibicao.length === 0 ? (
                     <tr>
                       <td colSpan="14" className="text-center py-16 print:py-6 px-4">
                         <div className="max-w-md mx-auto flex flex-col items-center justify-center text-center">
@@ -3065,7 +3108,7 @@ export default function App() {
                       </td>
                     </tr>
                   ) : (
-                    activeSales.map((sale, index) => (
+                    listaVendasExibicao.map((sale, index) => (
                       <tr 
                         key={sale.id} 
                         className={`transition-colors duration-150 group print:hover:bg-transparent print:border-b print:border-slate-200 ${
@@ -3245,7 +3288,7 @@ export default function App() {
 
           {/* MOBILE FIRST VIEW: Ergonomic Accordion Cards */}
           <div className={`block lg:hidden space-y-3 print:hidden ${isSalesCollapsed ? 'hidden' : ''}`}>
-            {activeSales.length === 0 ? (
+            {listaVendasExibicao.length === 0 ? (
               <div className={`border rounded-2xl p-8 text-center ${
                 isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
               }`}>
@@ -3262,7 +3305,7 @@ export default function App() {
               </div>
             ) : (
               <>
-                {activeSales.map((sale, idx) => {
+                {listaVendasExibicao.map((sale, idx) => {
                   const isExpanded = expandedMobileCardId === sale.id;
                   return (
                     <div 
@@ -4005,15 +4048,94 @@ export default function App() {
                   <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.dsr)}</span>
                 </div>
 
-                <div className="flex items-center justify-between pt-2.5">
-                  <div>
-                    <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>10. Lançamentos Extras Manuais</span>
-                    <span className="text-[11px] text-slate-500 font-sans">Usados ({formatBRL(activeExtras.premioUsados)}) + Águia ({formatBRL(activeExtras.premioAguia)}) + Líder ({formatBRL(activeExtras.premioLider)}) + NPS ({formatBRL(activeExtras.premioNps)})</span>
+                {}
+                <div className="pt-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className={`font-semibold block font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        10. Lançamentos Extras Manuais (Editável)
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-sans">
+                        Edite os valores abaixo para recalcular a comissão bruta e o líquido em tempo real:
+                      </span>
+                    </div>
+                    <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                      {formatBRL(metrics.extrasTotal)}
+                    </span>
                   </div>
-                  <span className={`font-bold text-sm tabular-nums ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatBRL(metrics.extrasTotal)}</span>
+
+                  {/* Grid de Inputs Compactos para Edição Direta e Reativa */}
+                  <div className={`grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl border ${
+                    isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-100/70 border-slate-200'
+                  }`}>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1 truncate">
+                        Prêmio Usados
+                      </label>
+                      <CurrencyInput
+                        theme={theme}
+                        value={activeExtras.premioUsados}
+                        onChange={(v) => handlePremioChange('premioUsados', v)}
+                        className={`text-xs font-bold ${
+                          isDark
+                            ? 'text-amber-400 focus:border-amber-400 focus:ring-amber-400/30'
+                            : 'text-amber-600 focus:border-amber-500'
+                        }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1 truncate">
+                        Prêmio Águia
+                      </label>
+                      <CurrencyInput
+                        theme={theme}
+                        value={activeExtras.premioAguia}
+                        onChange={(v) => handlePremioChange('premioAguia', v)}
+                        className={`text-xs font-bold ${
+                          isDark
+                            ? 'text-amber-400 focus:border-amber-400 focus:ring-amber-400/30'
+                            : 'text-amber-600 focus:border-amber-500'
+                        }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1 truncate">
+                        Prêmio Líder
+                      </label>
+                      <CurrencyInput
+                        theme={theme}
+                        value={activeExtras.premioLider}
+                        onChange={(v) => handlePremioChange('premioLider', v)}
+                        className={`text-xs font-bold ${
+                          isDark
+                            ? 'text-amber-400 focus:border-amber-400 focus:ring-amber-400/30'
+                            : 'text-amber-600 focus:border-amber-500'
+                        }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-1 truncate">
+                        Prêmio NPS
+                      </label>
+                      <CurrencyInput
+                        theme={theme}
+                        value={activeExtras.premioNps}
+                        onChange={(v) => handlePremioChange('premioNps', v)}
+                        className={`text-xs font-bold ${
+                          isDark
+                            ? 'text-amber-400 focus:border-amber-400 focus:ring-amber-400/30'
+                            : 'text-amber-600 focus:border-amber-500'
+                        }`}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
+              {}
               <div className="p-4 bg-sky-500/10 border border-sky-500/20 rounded-2xl flex items-center justify-between">
                 <div>
                   <span className="text-xs font-bold text-sky-500 block">Total Geral Bruto Apurado</span>
